@@ -11,9 +11,7 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
 puppeteerExtra.use(StealthPlugin());
 
-export const launchBrowser = async (
-  headless: boolean = true
-): Promise<Browser> => {
+export const launchBrowser = async (headless: boolean): Promise<Browser> => {
   const browser = await puppeteerExtra.launch({
     headless,
     args: [
@@ -26,6 +24,7 @@ export const launchBrowser = async (
     defaultViewport: { width: 1920, height: 1080, deviceScaleFactor: 1 },
   });
 
+  console.info("Browser launched successfully.");
   return browser;
 };
 
@@ -38,9 +37,12 @@ export const createPage = async (browser: Browser): Promise<Page> => {
 
   await page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9" });
 
+  console.info("New page created successfully.");
   return page;
 };
 
 export const closeBrowser = async (browser: Browser) => {
   if (browser) await browser.close();
+  console.info("Browser closed successfully.");
+  return;
 };

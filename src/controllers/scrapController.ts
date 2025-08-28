@@ -7,23 +7,42 @@
 
 // Dependencies
 import { NextFunction, Request, Response } from "express";
+import { startScraping } from "../Services/scrap.service.js";
+import { successResponse } from "./responseController.js";
 
 // Start Scraping Job
 export const startScrapingJob = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
+  // <-- Promise<void> instead of Promise<Response>
   try {
-    const { make, model, keep_duplicates, debug_mode } = req.body;
+    const {
+      make,
+      model,
+      keep_duplicates = false,
+      debug_mode = false,
+    } = req.body;
 
     // Validate required fields
     if (!make || !model) {
-      return res.status(400).json({
+      res.status(400).json({
         status: "error",
         message: "Make and model are required fields.",
       });
+      return;
     }
+
+    // Start a scraping job
+    const response = await startScraping(
+      make,
+      model,
+      Boolean(keep_duplicates),
+      Boolean(debug_mode)
+    );
+
+    successResponse(res, response);
   } catch (error) {
     next(error);
   }
