@@ -21,7 +21,8 @@
     "puppeteer": "^24.17.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "re2": "^1.22.1"
+    "re2": "^1.22.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.7",

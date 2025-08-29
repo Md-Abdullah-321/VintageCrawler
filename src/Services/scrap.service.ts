@@ -5,8 +5,15 @@
  * Date: 28/08/2025
  */
 
-import { createPage, launchBrowser } from "../helpers/puppeteer-utils.js";
+import { v4 as uuid } from "uuid";
+import { saveToCSV } from "../helpers/output.js";
+import {
+  closeBrowser,
+  createPage,
+  launchBrowser,
+} from "../helpers/puppeteer-utils.js";
 import { wait } from "../helpers/utils.js";
+import { scrapClassicCom } from "../scraper/classiccom.js";
 import { scrapClassicValuer } from "../scraper/classicvaluer.js";
 
 // Dependencies
@@ -26,6 +33,7 @@ export const startScraping = async (
   await wait(2000);
 
   // Scrap car data from theclassicvaluer.com
+  const id = uuid();
   const classicvaluerResults = await scrapClassicValuer(
     browser,
     page,
@@ -33,14 +41,27 @@ export const startScraping = async (
     model
   );
 
-  console.log(classicvaluerResults.length);
+  const classicComResults = await scrapClassicCom(browser, page, make, model);
 
-  // Scrap car data from classic.com
+  // concatenate results
+  const allResults = [...classicvaluerResults, ...classicComResults];
+
+  // Save results as CSV
+  const filePath = `./output/${id}.csv`;
+  await saveToCSV(allResults, filePath);
+
+  // Close the page
+  await page.close();
 
   // Close the browser after scraping
-  // await closeBrowser(browser);
+  await closeBrowser(browser);
   return {
     statusCode: 200,
     message: `Scraping job started for ${make} ${model} with keepDuplicates=${keepDuplicates} and debugMode=${debugMode}`,
+    payload: {
+      jobId: id,
+      source: "theclassicvaluer.com",
+      results: classicComResults,
+    },
   };
 };
