@@ -28,26 +28,14 @@ export const scrapClassicValuer = async (
     // Navigate to Classic Valuer
     await gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL!, 60000);
 
-    // Search for the car using make and model
-    await clickElement(page, "#comp-ljztv26f");
-    await wait(3000);
-
-    await typeLikeHuman(
-      page,
-      '[placeholder="Enter a make and/or model"]',
-      `${make} ${model}`
-    );
-    await wait(2000);
-
-    // Press Enter to search
-    await page.keyboard.press("Enter");
-    await wait(5000);
-
     // --- Scraping setup ---
     let results: any[] = [];
     let seenPayloadSignatures = new Set();
-    let maxPages = 100; // fallback
+    let maxPages = 0;
+    let currentPage = 1;
+
     const firstApiEvent = new EventEmitter();
+    const pageApiEvent = new EventEmitter();
 
     const API_REGEX = new re(
       "GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax",
@@ -57,7 +45,7 @@ export const scrapClassicValuer = async (
       'a[data-testid="Pagination_NavButton_Next"][aria-disabled="false"]';
     const CONTAINER_SELECTOR = "#comp-le47op7r";
 
-    // --- Listen for API responses ---
+    // --- Listen for API responses (BEFORE search) ---
     page.on("response", async (response: any) => {
       try {
         const resUrl = response.url();
@@ -71,22 +59,15 @@ export const scrapClassicValuer = async (
         )
           return;
 
-        if (response.status() !== 200) {
-          console.log(
-            `⚠️ Non-200 status for API: ${response.status()} (${resUrl})`
-          );
-          return;
-        }
+        if (response.status() !== 200) return;
 
         const data = await response.json();
         let records: any[] = [];
 
         if (typeof data === "object" && !Array.isArray(data)) {
-          const count = data?.results?.count;
-          if (count) {
-            maxPages = Math.ceil(count / 12);
-          }
-          records = data?.data || data?.result?.records || data?.items || [];
+          const count = data?.result?.count;
+          if (count) maxPages = Math.ceil(count / 12);
+          records = data?.result?.records || data?.items || [];
         } else if (Array.isArray(data)) {
           records = data;
         }
@@ -103,16 +84,28 @@ export const scrapClassicValuer = async (
           }
         }
 
-        // Signal first API response
-        if (!firstApiEvent.eventNames().includes("first")) {
-          firstApiEvent.emit("first");
-        }
+        // Signal events
+        firstApiEvent.emit("first"); // only first matters once
+        pageApiEvent.emit("page", currentPage);
 
         console.log(`✅ Captured ${records.length} records from API.`);
       } catch (err) {
         console.error("Error parsing API response:", err);
       }
     });
+
+    // --- Do the search ---
+    await clickElement(page, '[name="enter-a make and/or model"]');
+    await wait(1500);
+
+    await typeLikeHuman(
+      page,
+      '[placeholder="Enter a make and/or model"]',
+      `${make} ${model}`
+    );
+
+    await wait(1500);
+    await page.keyboard.press("Enter");
 
     // --- Wait for container ---
     try {
@@ -125,7 +118,7 @@ export const scrapClassicValuer = async (
       return [];
     }
 
-    // --- Wait for first API response ---
+    // --- Wait for first API response (so first page is captured) ---
     try {
       await Promise.race([
         new Promise((resolve) => firstApiEvent.once("first", resolve)),
@@ -134,16 +127,13 @@ export const scrapClassicValuer = async (
         ),
       ]);
     } catch {
-      console.log(
-        "⚠️ First API response did not arrive in time. Using default maxPages."
-      );
+      console.log("⚠️ First API response did not arrive in time.");
     }
 
-    console.log(`📄 Maximum pages to scrape: ${maxPages}`);
-    let currentPage = 1;
+    console.log(`📄 Maximum pages to scrape: ${maxPages || "unknown"}`);
 
-    // --- Pagination loop ---
-    while (currentPage <= maxPages) {
+    // --- Pagination loop (wait for API instead of fixed 3s) ---
+    while (currentPage < maxPages) {
       const nextBtn = await page.$(NEXT_BUTTON_SELECTOR);
       if (!nextBtn) {
         console.log(`✅ No more Next button after page ${currentPage}.`);
@@ -151,10 +141,15 @@ export const scrapClassicValuer = async (
       }
 
       try {
+        currentPage++;
         await nextBtn.scrollIntoViewIfNeeded();
         await nextBtn.click();
-        currentPage++;
-        await wait(3000);
+
+        // Wait for the API response corresponding to this page
+        await Promise.race([
+          new Promise((resolve) => pageApiEvent.once("page", resolve)),
+          wait(10000), // fallback if API is slow
+        ]);
       } catch (err: any) {
         console.log(
           `⚠️ Pagination stopped at page ${currentPage}:`,
