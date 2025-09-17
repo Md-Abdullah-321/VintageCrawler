@@ -13,6 +13,7 @@ import {
   launchBrowser,
 } from "../helpers/puppeteer-utils.js";
 import { wait } from "../helpers/utils.js";
+import validateCars from "../helpers/validate-cars.js";
 import { scrapClassicCom } from "../scraper/classiccom.js";
 import { scrapClassicValuer } from "../scraper/classicvaluer.js";
 
@@ -22,6 +23,8 @@ import { scrapClassicValuer } from "../scraper/classicvaluer.js";
 export const startScraping = async (
   make: string,
   model: string,
+  transmission: string,
+  site: string,
   keepDuplicates: boolean,
   debugMode: boolean
 ) => {
@@ -34,17 +37,48 @@ export const startScraping = async (
 
   // Scrap car data from theclassicvaluer.com
   const id = uuid();
-  const classicvaluerResults = await scrapClassicValuer(
-    browser,
-    page,
-    make,
-    model
+  let allResults: any[] = [];
+  console.log(
+    `🚀 Starting scraping job for ${make} ${model} with keepDuplicates=${keepDuplicates} and debugMode=${debugMode}`
   );
 
-  const classicComResults = await scrapClassicCom(browser, page, make, model);
+  if (site === "theclassicvaluer.com" || site === "both") {
+    const classicvaluerResults = await scrapClassicValuer(
+      browser,
+      page,
+      make,
+      model,
+      transmission
+    );
 
-  // concatenate results
-  const allResults = [...classicvaluerResults, ...classicComResults];
+    allResults = allResults.concat(classicvaluerResults);
+  }
+
+  // Scrap car data from classic.com
+  if (site === "classic.com" || site === "both") {
+    const classicComResults = await scrapClassicCom(
+      browser,
+      page,
+      make,
+      model,
+      transmission
+    );
+
+    // Validate results to remove non-matching cars
+    console.log("🔍 Validating classicCom results...");
+    const validatedClassicComResults = await validateCars(
+      classicComResults,
+      make,
+      model,
+      transmission
+    );
+
+    allResults = allResults.concat(validatedClassicComResults);
+  }
+
+  console.log("✅ Validation complete. Valid entries:", allResults.length);
+
+  //TODO: If keepDuplicates is false, remove duplicates based on lot_description
 
   // Save results as CSV
   const filePath = `./output/${id}.csv`;
@@ -61,7 +95,7 @@ export const startScraping = async (
     payload: {
       jobId: id,
       source: "theclassicvaluer.com",
-      results: classicComResults,
+      // results: classicComResults,
     },
   };
 };

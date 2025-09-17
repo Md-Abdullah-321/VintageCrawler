@@ -22,11 +22,14 @@ export const scrapClassicValuer = async (
   browser: any,
   page: any,
   make: string,
-  model: string
+  model: string,
+  transmission: string
 ) => {
   try {
     // Navigate to Classic Valuer
     await gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL!, 60000);
+
+    console.log("📄 Page loaded:", await page.title());
 
     // --- Scraping setup ---
     let results: any[] = [];
@@ -79,6 +82,15 @@ export const scrapClassicValuer = async (
           for (const rec of records) {
             if (typeof rec === "object") {
               rec.sourceUrl = process.env.CLASSIC_VALUER_BASE_URL;
+
+              // ✅ Add status based on price_usd_string
+              const priceStr = rec.price_usd_string || "";
+              rec.status =
+                priceStr.toLowerCase().includes("not sold") ||
+                priceStr.trim() === ""
+                  ? "Not Sold"
+                  : "Sold";
+
               results.push(rec);
             }
           }
@@ -101,7 +113,7 @@ export const scrapClassicValuer = async (
     await typeLikeHuman(
       page,
       '[placeholder="Enter a make and/or model"]',
-      `${make} ${model}`
+      `${make} ${model} ${transmission}`.trim()
     );
 
     await wait(1500);

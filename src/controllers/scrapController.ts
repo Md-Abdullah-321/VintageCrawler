@@ -21,6 +21,8 @@ export const startScrapingJob = async (
     const {
       make,
       model,
+      transmission,
+      site,
       keep_duplicates = false,
       debug_mode = false,
     } = req.body;
@@ -38,6 +40,8 @@ export const startScrapingJob = async (
     const response = await startScraping(
       make,
       model,
+      transmission,
+      site,
       Boolean(keep_duplicates),
       Boolean(debug_mode)
     );
