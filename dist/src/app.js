@@ -29,14 +29,18 @@ app.use("/api/v1", ScrapRoutes);
 app.use("/api/v1", csvRoutes);
 // -------------------- Serve CSVs --------------------
 // Serve CSVs from project root `output` folder
-app.use("/output", express.static(path.join(__dirname, "../output")));
+const outputPath = path.join(process.cwd(), "output");
+app.use("/output", express.static(outputPath));
 // Optional: Force download route
 app.get("/download/:filename", (req, res) => {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, "../output", filename);
+    const filePath = path.join(outputPath, filename);
+    console.log("Downloading file:", filePath); // debug log
     res.download(filePath, filename, (err) => {
-        if (err)
+        if (err) {
+            console.error("Download error:", err);
             res.status(404).send("File not found");
+        }
     });
 });
 // -------------------- Serve Dashboard --------------------
