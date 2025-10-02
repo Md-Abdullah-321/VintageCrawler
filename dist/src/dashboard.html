@@ -327,7 +327,7 @@
       };
 
       try {
-        const res = await fetch("http://localhost:8000/api/v1/scrape", {
+        const res = await fetch("/api/v1/scrape", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -373,7 +373,7 @@
         console.log(`Polling job ${jobId} at ${new Date().toISOString()}`); // Debug log
         try {
           const res = await fetch(
-            `http://localhost:8000/api/v1/scrape/status/${jobId}`
+            `/api/v1/scrape/status/${jobId}`
           );
           if (!res.ok)
             throw new Error(`HTTP error! Status: ${res.status}`);
@@ -413,7 +413,7 @@
       list.innerHTML = "<li class='text-center'>Loading CSVs...</li>";
 
       try {
-        const res = await fetch("http://localhost:8000/api/v1/csv");
+        const res = await fetch("/api/v1/csv");
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const files = await res.json();
 
@@ -440,7 +440,7 @@
           });
           li.innerHTML = `
             <span>${file.fileName} <span class="text-gray-600 text-sm">(${createdAt})</span></span>
-            <a href="http://localhost:8000/output/${file.fileName}" download
+            <a href="/output/${file.fileName}" download
               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
               Download
             </a>
@@ -459,7 +459,7 @@
     function startPolling() {
       setInterval(async () => {
         try {
-          const res = await fetch("http://localhost:8000/api/v1/csv");
+          const res = await fetch("/api/v1/csv");
           if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
           const files = await res.json();
           if (files.length !== lastFileCount) {

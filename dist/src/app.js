@@ -30,6 +30,8 @@ app.get("/test", (req, res) => {
 app.use("/api/v1", ScrapRoutes);
 // -------------------- CSV Routes --------------------
 app.use("/api/v1", csvRoutes);
+// Serve CSVs from the output folder
+app.use("/output", express.static(path.join(__dirname, "output")));
 // -------------------- Serve Dashboard --------------------
 app.get("/", (_req, res) => {
     res.sendFile(path.join(__dirname, "dashboard.html"));
