@@ -179,6 +179,7 @@
           };
 
           try {
+            alert("🚀 Starting scraping job...");
             const res = await fetch("/api/v1/scrape", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -191,6 +192,7 @@
             currentJobId = data.payload.jobId;
             saveJob({ ...payload, jobId: currentJobId, status: "in progress", progress: 10, startedAt: new Date().toISOString() });
             monitorJobProgress(currentJobId);
+            alert("✅ Scraping job completed successfully!");
           } catch (err) { alert("❌ Request failed. Check console for details."); console.error(err); }
         });
 
