@@ -30,6 +30,7 @@ const normalizeStatus = (desc: string | null | undefined) => {
   if (lower.includes("sold")) return "Sold";
   if (lower.includes("for sale")) return "For Sale";
   if (lower.includes("last asking")) return "Last Asking";
+  if (lower.includes("price undisclosed")) return "Price Undisclosed";
   return "";
 };
 
@@ -50,8 +51,8 @@ const derivePriceFields = (priceText: string | null | undefined) => {
   const num = parsePriceNumber(pt);
 
   return {
-    price_usd_number: hasUSD ? num : null,
-    price_usd_string: hasUSD ? pt : "",
+    price_usd_number: hasUSD ? num?.toString()?.trim() : null,
+    price_usd_string: hasUSD ? pt?.toString()?.trim() : "",
     price_gbp_number: null, // we ignore GBP
     price_gbp_string: "",
     price_eur_number: null, // we ignore EUR
@@ -94,12 +95,12 @@ const transformClassicItem = (raw: RawClassicItem) => {
 
   return {
     // --- Reference schema fields ---
-    auction_date_long: raw.auction_date_long || "",
-    auction_desc: auctionDesc,
-    auction_house: raw.auction_house || "",
-    auction_location: raw.auction_location || "",
-    auction_name: auctionName,
-    lot_description: raw.title || "",
+    auction_date_long: raw.auction_date_long.toString().trim() || "",
+    auction_desc: auctionDesc.toString().trim() || "",
+    auction_house: raw.auction_house.toString().trim() || "",
+    auction_location: raw.auction_location.toString().trim() || "",
+    auction_name: auctionName.toString().trim() || "",
+    lot_description: raw.title.toString().trim() || "",
 
     chassis_number: "", // not scraped here
     reg_number: "", // not scraped here
@@ -112,8 +113,8 @@ const transformClassicItem = (raw: RawClassicItem) => {
       ? raw.link
       : `https://www.classic.com${raw.link || ""}`,
 
-    price_usd_number,
-    price_usd_string,
+    price_usd_number: price_usd_number?.toString().trim() || null,
+    price_usd_string : price_usd_string?.toString().trim() || "",
     price_gbp_number,
     price_gbp_string,
     price_eur_number,
