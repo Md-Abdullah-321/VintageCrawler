@@ -19,75 +19,33 @@
       </header>
 
       <!-- Start Scraping Form -->
-      <section
-        class="bg-white shadow-lg rounded-2xl p-6 md:p-8 mb-12 max-w-4xl mx-auto"
-      >
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6">
-          Start New Scraping Job
-        </h2>
-        <form
-          action="/api/v1/scrape"
-          method="POST"
-          class="space-y-6"
-          aria-label="Start scraping job form"
-        >
-          <!-- Car Make, Model, Transmission & Site -->
+      <section class="bg-white shadow-lg rounded-2xl p-6 md:p-8 mb-12 max-w-4xl mx-auto">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Start New Scraping Job</h2>
+        <form action="/api/v1/scrape" method="POST" class="space-y-6" aria-label="Start scraping job form">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label
-                for="car_make"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Car Make</label
-              >
-              <input
-                type="text"
-                id="car_make"
-                name="car_make"
-                placeholder="e.g., Ford"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+              <label for="car_make" class="block text-sm font-medium text-gray-700 mb-2">Car Make</label>
+              <input type="text" id="car_make" name="car_make" placeholder="e.g., Ford"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div>
-              <label
-                for="car_model"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Car Model</label
-              >
-              <input
-                type="text"
-                id="car_model"
-                name="car_model"
-                placeholder="e.g., Mustang"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
+              <label for="car_model" class="block text-sm font-medium text-gray-700 mb-2">Car Model</label>
+              <input type="text" id="car_model" name="car_model" placeholder="e.g., Mustang"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
             </div>
             <div>
-              <label
-                for="transmission"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Transmission</label
-              >
-              <select
-                id="transmission"
-                name="transmission"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              >
+              <label for="transmission" class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+              <select id="transmission" name="transmission"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="">Select Transmission</option>
                 <option value="Manual">Manual</option>
                 <option value="Automatic">Automatic</option>
               </select>
             </div>
             <div>
-              <label
-                for="site"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Select Site</label
-              >
-              <select
-                id="site"
-                name="site"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              >
+              <label for="site" class="block text-sm font-medium text-gray-700 mb-2">Select Site</label>
+              <select id="site" name="site"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 <option value="">Select Site</option>
                 <option value="theclassicvaluer.com">The Classic Valuer</option>
                 <option value="classic.com">classic.com</option>
@@ -96,392 +54,202 @@
             </div>
           </div>
 
-          <!-- Options -->
-          <div
-            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-          >
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <label class="inline-flex items-center" for="keep_duplicates">
-              <input
-                type="checkbox"
-                id="keep_duplicates"
-                name="keep_duplicates"
-                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400"
-              />
-              <span class="ml-2 text-gray-700 font-medium"
-                >Keep Duplicates</span
-              >
+              <input type="checkbox" id="keep_duplicates" name="keep_duplicates"
+                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+              <span class="ml-2 text-gray-700 font-medium">Keep Duplicates</span>
             </label>
-
             <label class="inline-flex items-center" for="debug_mode">
-              <input
-                type="checkbox"
-                id="debug_mode"
-                name="debug_mode"
-                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400"
-              />
+              <input type="checkbox" id="debug_mode" name="debug_mode"
+                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
               <span class="ml-2 text-gray-700 font-medium">Debug Mode</span>
             </label>
           </div>
 
-          <!-- Submit Button -->
           <div class="text-center">
-            <button
-              type="submit"
+            <button type="submit"
               class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
-              aria-label="Start scraping job"
-            >
+              aria-label="Start scraping job">
               Start Scraping
             </button>
           </div>
         </form>
       </section>
 
-    <!-- Scraping Jobs -->
-    <section class="mb-12 max-w-4xl mx-auto">
-      <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-        <h2 class="text-2xl font-semibold text-gray-800">Scraping Jobs</h2>
-        <button
-          id="refresh-jobs"
-          class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          aria-label="Refresh scraping jobs"
-        >
-          Refresh
-        </button>
-      </div>
-      <div id="job-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
-        <p class="text-center text-gray-600">No scraping jobs yet.</p>
-      </div>
-    </section>
+      <!-- Scraping Jobs -->
+      <section class="mb-12 max-w-4xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+          <h2 class="text-2xl font-semibold text-gray-800">Scraping Jobs</h2>
+          <button id="refresh-jobs"
+            class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            aria-label="Refresh scraping jobs">
+            Refresh
+          </button>
+        </div>
+        <div id="job-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
+          <p class="text-center text-gray-600">No scraping jobs yet.</p>
+        </div>
+      </section>
 
       <!-- Available CSVs -->
-    <section class="mb-12 max-w-4xl mx-auto">
-      <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-        <h2 class="text-2xl font-semibold text-gray-800">Available CSVs</h2>
-        <button
-          id="refresh-csvs"
-          class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          aria-label="Refresh CSVs"
-        >
-          Refresh
-        </button>
-      </div>
-      <div id="csv-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
-        <li class="text-center text-gray-500">No CSVs available yet.</li>
-      </div>
-    </section>
+      <section class="mb-12 max-w-4xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+          <h2 class="text-2xl font-semibold text-gray-800">Available CSVs</h2>
+          <button id="refresh-csvs"
+            class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            aria-label="Refresh CSVs">
+            Refresh
+          </button>
+        </div>
+        <div id="csv-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
+          <li class="text-center text-gray-500">No CSVs available yet.</li>
+        </div>
+      </section>
     </div>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.querySelector("form[action='/api/v1/scrape']");
-    const makeInput = document.getElementById("car_make");
-    const modelInput = document.getElementById("car_model");
-    const siteSelect = document.getElementById("site");
-    const jobList = document.getElementById("job-list");
-    let currentJobId = null;
-    let lastFileCount = 0;
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector("form[action='/api/v1/scrape']");
+        const makeInput = document.getElementById("car_make");
+        const modelInput = document.getElementById("car_model");
+        const siteSelect = document.getElementById("site");
+        const jobList = document.getElementById("job-list");
+        let currentJobId = null;
+        let lastFileCount = 0;
 
-    // Load jobs from localStorage
-    const loadJobs = () => {
-      const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
-      renderJobs(jobs);
-    };
-
-    // Save job to localStorage
-    const saveJob = (job) => {
-      const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
-      jobs.push(job);
-      localStorage.setItem("scrapingJobs", JSON.stringify(jobs));
-      renderJobs(jobs);
-    };
-
-    // Render jobs in the UI with progress bar, message, and newest on top
-    const renderJobs = (jobs) => {
-      console.log("Rendering jobs:", jobs); // Debug log
-      jobs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-      jobList.innerHTML = jobs.length
-        ? jobs
-            .map(
-              (job) => `
-            <div class="flex flex-col p-4 border border-gray-200 rounded-lg">
-              <div class="flex justify-between">
-                <span>${job.make} ${job.model} (${job.status})</span>
-                <span>${new Date(job.startedAt).toLocaleString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })}</span>
-              </div>
-              ${job.status !== "completed"
-                ? `<div class="mt-2">
-                    <p class="text-sm text-gray-600">${getStatusMessage(job)}</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                      <div class="h-2.5 rounded-full" style="width: ${job.progress}%" ${
-                job.status === "failed"
-                  ? 'style="background-color: #ef4444"'
-                  : 'style="background-color: #3b82f6"'
-              }></div>
-                    </div>
-                    <p class="text-sm text-gray-600 mt-1">${job.progress}%</p>
-                  </div>`
-                : ""}
-            </div>`
-            )
-            .join("")
-        : "<p class='text-center text-gray-600'>No scraping jobs yet.</p>";
-    };
-
-    // Get status message based on progress
-    const getStatusMessage = (job) => {
-      switch (job.progress) {
-        case 0:
-          return "Initializing scraping job...";
-        case 10:
-          return `Started scraping ${job.make} ${job.model}...`;
-        case 12:
-        case 14:
-        case 16:
-        case 18:
-        case 20:
-        case 22:
-        case 24:
-        case 26:
-        case 28:
-        case 30:
-        case 32:
-        case 34:
-        case 36:
-        case 38:
-        case 40:
-          return "Navigating to classicvaluer.com...";
-        case 42:
-        case 44:
-        case 46:
-        case 48:
-        case 50:
-        case 52:
-        case 54:
-        case 56:
-        case 58:
-        case 60:
-        case 62:
-        case 64:
-        case 66:
-        case 68:
-        case 70:
-          return "Navigating to classic.com and validating results...";
-        case 72:
-        case 74:
-        case 76:
-        case 78:
-        case 80:
-        case 82:
-        case 84:
-        case 86:
-        case 88:
-        case 90:
-        case 92:
-        case 94:
-        case 96:
-        case 98:
-        case 100:
-          return "Saving results to CSV...";
-        default:
-          return "Processing...";
-      }
-    };
-
-    // Handle scraping job form
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      [makeInput, modelInput, siteSelect].forEach((el) =>
-        el.classList.remove("border-red-500")
-      );
-
-      let hasError = false;
-      if (!makeInput.value.trim()) {
-        makeInput.classList.add("border-red-500");
-        hasError = true;
-      }
-      if (!modelInput.value.trim()) {
-        modelInput.classList.add("border-red-500");
-        hasError = true;
-      }
-      if (!siteSelect.value.trim()) {
-        siteSelect.classList.add("border-red-500");
-        hasError = true;
-      }
-
-      if (hasError) return;
-
-      const payload = {
-        make: makeInput.value.trim(),
-        model: modelInput.value.trim(),
-        transmission: document.getElementById("transmission").value,
-        site: siteSelect.value,
-        keep_duplicates: document.getElementById("keep_duplicates").checked,
-        debug_mode: document.getElementById("debug_mode").checked,
-      };
-
-      try {
-        const res = await fetch("/api/v1/scrape", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        let data;
-        try {
-          data = await res.json();
-        } catch {
-          data = await res.text();
-        }
-
-        if (!res.ok) {
-          console.error("❌ Server error:", res.status, data);
-          alert(`❌ Failed: ${res.status}\n${JSON.stringify(data)}`);
-          return;
-        }
-
-        console.log("Scraping response:", data); // Debug log
-        currentJobId = data.payload.jobId;
-        // Immediately create job with 10% progress
-        const initialJob = {
-          ...payload,
-          jobId: currentJobId,
-          status: "in progress",
-          progress: 10, // Initial 10% as per backend
-          startedAt: new Date().toISOString(),
-        };
-        saveJob(initialJob);
-        monitorJobProgress(currentJobId);
-      } catch (err) {
-        console.error("❌ Network/JS error:", err);
-        alert("❌ Request failed. Check console for details.");
-      }
-    });
-
-    // Monitor job progress
-    const monitorJobProgress = (jobId) => {
-      console.log(
-        `Starting progress monitoring for job ${jobId} at ${new Date().toISOString()}`
-      );
-      const interval = setInterval(async () => {
-        console.log(`Polling job ${jobId} at ${new Date().toISOString()}`); // Debug log
-        try {
-          const res = await fetch(
-            `/api/v1/scrape/status/${jobId}`
-          );
-          if (!res.ok)
-            throw new Error(`HTTP error! Status: ${res.status}`);
-          const job = await res.json();
-          console.log(
-            `Job ${jobId} status update at ${new Date().toISOString()}:`,
-            job
-          );
-
+        const loadJobs = () => {
           const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
-          const updatedJobs = jobs.map((j) =>
-            j.jobId === jobId ? { ...j, ...job } : j
-          );
-          localStorage.setItem("scrapingJobs", JSON.stringify(updatedJobs));
-          renderJobs(updatedJobs);
+          renderJobs(jobs);
+        };
 
-          if (job.status === "completed" || job.status === "failed") {
-            console.log(
-              `Job ${jobId} finished with status: ${job.status} at ${new Date().toISOString()}`
-            );
-            clearInterval(interval);
-            loadCSVs(); // Refresh CSVs after completion
-          }
-        } catch (err) {
-          console.error(
-            `❌ Error monitoring job ${jobId} at ${new Date().toISOString()}:`,
-            err
-          );
-          clearInterval(interval);
-        }
-      }, 250); // Poll every 0.25 seconds
-    };
+        const saveJob = (job) => {
+          const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
+          jobs.push(job);
+          localStorage.setItem("scrapingJobs", JSON.stringify(jobs));
+          renderJobs(jobs);
+        };
 
-    // Load CSVs with download button
-    async function loadCSVs() {
-      const list = document.getElementById("csv-list");
-      list.innerHTML = "<li class='text-center'>Loading CSVs...</li>";
+        const renderJobs = (jobs) => {
+          jobs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+          jobList.innerHTML = jobs.length
+            ? jobs.map(job => `
+              <div class="flex flex-col p-4 border border-gray-200 rounded-lg">
+                <div class="flex justify-between">
+                  <span>${job.make} ${job.model} (${job.status})</span>
+                  <span>${new Date(job.startedAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}</span>
+                </div>
+                ${job.status !== "completed"
+                  ? `<div class="mt-2">
+                      <p class="text-sm text-gray-600">${getStatusMessage(job)}</p>
+                      <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                        <div class="h-2.5 rounded-full" style="width: ${job.progress}%; background-color: ${job.status === "failed" ? "#ef4444" : "#3b82f6"}"></div>
+                      </div>
+                      <p class="text-sm text-gray-600 mt-1">${job.progress}%</p>
+                    </div>`
+                  : ""}
+              </div>`).join("")
+            : "<p class='text-center text-gray-600'>No scraping jobs yet.</p>";
+        };
 
-      try {
-        const res = await fetch("/api/v1/csv");
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        const files = await res.json();
+        const getStatusMessage = (job) => {
+          if (job.progress === 0) return "Initializing scraping job...";
+          if (job.progress <= 10) return `Started scraping ${job.make} ${job.model}...`;
+          if (job.progress <= 70) return "Navigating sites and validating results...";
+          if (job.progress <= 100) return "Saving results to CSV...";
+          return "Processing...";
+        };
 
-        list.innerHTML = "";
-        if (!files.length) {
-          list.innerHTML =
-            "<li class='text-center text-gray-500'>No CSVs available yet.</li>";
-          lastFileCount = 0;
-          return;
-        }
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          [makeInput, modelInput, siteSelect].forEach(el => el.classList.remove("border-red-500"));
+          let hasError = false;
+          if (!makeInput.value.trim()) { makeInput.classList.add("border-red-500"); hasError = true; }
+          if (!modelInput.value.trim()) { modelInput.classList.add("border-red-500"); hasError = true; }
+          if (!siteSelect.value.trim()) { siteSelect.classList.add("border-red-500"); hasError = true; }
+          if (hasError) return;
 
-        lastFileCount = files.length;
-        files.forEach((file) => {
-          const li = document.createElement("li");
-          li.className =
-            "flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg border border-gray-200";
-          const createdAt = new Date(file.createdAt).toLocaleString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          });
-          li.innerHTML = `
-            <span>${file.fileName} <span class="text-gray-600 text-sm">(${createdAt})</span></span>
-            <a href="/output/${file.fileName}" download
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-              Download
-            </a>
-          `;
-          list.appendChild(li);
+          const payload = {
+            make: makeInput.value.trim(),
+            model: modelInput.value.trim(),
+            transmission: document.getElementById("transmission").value,
+            site: siteSelect.value,
+            keep_duplicates: document.getElementById("keep_duplicates").checked,
+            debug_mode: document.getElementById("debug_mode").checked
+          };
+
+          try {
+            const res = await fetch("/api/v1/scrape", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            let data;
+            try { data = await res.json(); } catch { data = await res.text(); }
+            if (!res.ok) { alert(`❌ Failed: ${res.status}\n${JSON.stringify(data)}`); return; }
+
+            currentJobId = data.payload.jobId;
+            saveJob({ ...payload, jobId: currentJobId, status: "in progress", progress: 10, startedAt: new Date().toISOString() });
+            monitorJobProgress(currentJobId);
+          } catch (err) { alert("❌ Request failed. Check console for details."); console.error(err); }
         });
-      } catch (err) {
-        console.error("❌ Error fetching CSVs:", err);
-        list.innerHTML =
-          "<li class='text-center text-red-500'>Failed to load CSVs.</li>";
-        lastFileCount = 0;
-      }
-    }
 
-    // Poll for new CSVs
-    function startPolling() {
-      setInterval(async () => {
-        try {
-          const res = await fetch("/api/v1/csv");
-          if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-          const files = await res.json();
-          if (files.length !== lastFileCount) {
-            loadCSVs();
-          }
-        } catch (err) {
-          console.error("❌ Polling error:", err);
+        const monitorJobProgress = (jobId) => {
+          const interval = setInterval(async () => {
+            try {
+              const res = await fetch(`/api/v1/scrape/status/${jobId}`);
+              if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+              const job = await res.json();
+              const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
+              const updatedJobs = jobs.map(j => j.jobId === jobId ? { ...j, ...job } : j);
+              localStorage.setItem("scrapingJobs", JSON.stringify(updatedJobs));
+              renderJobs(updatedJobs);
+              if (job.status === "completed" || job.status === "failed") { clearInterval(interval); loadCSVs(); }
+            } catch (err) { clearInterval(interval); console.error(err); }
+          }, 250);
+        };
+
+        async function loadCSVs() {
+          const list = document.getElementById("csv-list");
+          list.innerHTML = "<li class='text-center'>Loading CSVs...</li>";
+          try {
+            const res = await fetch("/api/v1/csv");
+            if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+            const files = await res.json();
+            list.innerHTML = "";
+            if (!files.length) { list.innerHTML = "<li class='text-center text-gray-500'>No CSVs available yet.</li>"; lastFileCount = 0; return; }
+            lastFileCount = files.length;
+            files.forEach(file => {
+              const li = document.createElement("li");
+              li.className = "flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg border border-gray-200";
+              const createdAt = new Date(file.createdAt).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
+              li.innerHTML = `<span>${file.fileName} <span class="text-gray-600 text-sm">(${createdAt})</span></span>
+                <a href="/download/${file.fileName}" 
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                  Download
+                </a>`;
+              list.appendChild(li);
+            });
+          } catch (err) { console.error(err); list.innerHTML = "<li class='text-center text-red-500'>Failed to load CSVs.</li>"; lastFileCount = 0; }
         }
-      }, 10000);
-    }
 
-    // Event listeners
-    document
-      .getElementById("refresh-jobs")
-      .addEventListener("click", loadJobs);
-    document
-      .getElementById("refresh-csvs")
-      .addEventListener("click", loadCSVs);
-    loadJobs(); // Initial load
-    loadCSVs(); // Initial CSV load
-    startPolling(); // Start CSV polling
-  });
-</script>
+        function startPolling() {
+          setInterval(async () => {
+            try {
+              const res = await fetch("/api/v1/csv");
+              if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+              const files = await res.json();
+              if (files.length !== lastFileCount) { loadCSVs(); }
+            } catch (err) { console.error(err); }
+          }, 10000);
+        }
+
+        document.getElementById("refresh-jobs").addEventListener("click", loadJobs);
+        document.getElementById("refresh-csvs").addEventListener("click", loadCSVs);
+        loadJobs();
+        loadCSVs();
+        startPolling();
+      });
+    </script>
   </body>
 </html>
