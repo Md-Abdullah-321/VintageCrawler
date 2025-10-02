@@ -16,7 +16,6 @@ export const startScrapingJob = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // <-- Promise<void> instead of Promise<Response>
   try {
     const {
       make,

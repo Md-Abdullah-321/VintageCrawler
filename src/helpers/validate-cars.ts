@@ -34,6 +34,7 @@ const validateCars = async (
 
     const data = await res.json();
 
+
     if (data?.match) {
       validatedResults.push(item);
     }

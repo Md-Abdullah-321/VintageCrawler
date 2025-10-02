@@ -32,7 +32,7 @@ export const saveToCSV = async (data: any[], filePath: string) => {
     // Convert data to CSV string with headers
     const csv = stringify(data, { header: true });
 
-    // Write file
+    // Write CSV file
     await fs.writeFile(filePath, csv, "utf-8");
     console.log(`✅ CSV saved: ${filePath}`);
   } catch (error) {
@@ -41,7 +41,7 @@ export const saveToCSV = async (data: any[], filePath: string) => {
 };
 
 /**
- * Save data to JSON
+ * Save data to JSON (unchanged, but not used in this case)
  */
 export const saveToJSON = async (data: any, filePath: string) => {
   try {
@@ -52,7 +52,7 @@ export const saveToJSON = async (data: any, filePath: string) => {
 };
 
 /**
- * Append data to CSV
+ * Append data to CSV (unchanged)
  */
 export const appendToCSV = async (data: any[], filePath: string) => {
   try {
