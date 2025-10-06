@@ -38,8 +38,11 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     xdg-utils \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# Ensure libnspr4.so.1 exists for Puppeteer
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.1
 
 WORKDIR /app
 COPY package*.json ./
