@@ -19,33 +19,102 @@
       </header>
 
       <!-- Start Scraping Form -->
-      <section class="bg-white shadow-lg rounded-2xl p-6 md:p-8 mb-12 max-w-4xl mx-auto">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Start New Scraping Job</h2>
-        <form action="/api/v1/scrape" method="POST" class="space-y-6" aria-label="Start scraping job form">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <section
+        class="bg-white shadow-lg rounded-2xl p-6 md:p-8 mb-12 max-w-4xl mx-auto"
+      >
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+          Start New Scraping Job
+        </h2>
+
+        <form
+          id="scrape-form"
+          class="space-y-6"
+          aria-label="Start scraping job form"
+        >
+          <!-- Scraping Method Selection -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >Scraping Method</label
+            >
+            <div class="flex space-x-4">
+              <label class="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="scrape_method"
+                  value="make_model"
+                  checked
+                  class="form-radio h-5 w-5 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="ml-2 text-gray-700">Make and Model</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input
+                  type="radio"
+                  name="scrape_method"
+                  value="url"
+                  class="form-radio h-5 w-5 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="ml-2 text-gray-700">URL</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Make/Model Fields -->
+          <div
+            id="make-model-fields"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-6"
+          >
             <div>
-              <label for="car_make" class="block text-sm font-medium text-gray-700 mb-2">Car Make</label>
-              <input type="text" id="car_make" name="car_make" placeholder="e.g., Ford"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <label
+                for="car_make"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                >Car Make</label
+              >
+              <input
+                type="text"
+                id="car_make"
+                placeholder="e.g., Ford"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
             </div>
             <div>
-              <label for="car_model" class="block text-sm font-medium text-gray-700 mb-2">Car Model</label>
-              <input type="text" id="car_model" name="car_model" placeholder="e.g., Mustang"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <label
+                for="car_model"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                >Car Model</label
+              >
+              <input
+                type="text"
+                id="car_model"
+                placeholder="e.g., Mustang"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
             </div>
             <div>
-              <label for="transmission" class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
-              <select id="transmission" name="transmission"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <label
+                for="transmission"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                >Transmission</label
+              >
+              <select
+                id="transmission"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
                 <option value="">Select Transmission</option>
                 <option value="Manual">Manual</option>
                 <option value="Automatic">Automatic</option>
               </select>
             </div>
             <div>
-              <label for="site" class="block text-sm font-medium text-gray-700 mb-2">Select Site</label>
-              <select id="site" name="site"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <label
+                for="site"
+                class="block text-sm font-medium text-gray-700 mb-2"
+                >Select Site</label
+              >
+              <select
+                id="site"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
                 <option value="">Select Site</option>
                 <option value="theclassicvaluer.com">The Classic Valuer</option>
                 <option value="classic.com">classic.com</option>
@@ -54,23 +123,53 @@
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <label class="inline-flex items-center" for="keep_duplicates">
-              <input type="checkbox" id="keep_duplicates" name="keep_duplicates"
-                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+          <!-- URL Field -->
+          <div id="url-field" class="hidden">
+            <label
+              for="scrape_url"
+              class="block text-sm font-medium text-gray-700 mb-2"
+              >URL</label
+            >
+            <input
+              type="url"
+              id="scrape_url"
+              placeholder="e.g., https://example.com/car-listing"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <div
+            id="options-section"
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          >
+            <label
+              id="keep-duplicates-label"
+              class="inline-flex items-center"
+              for="keep_duplicates"
+            >
+              <input
+                type="checkbox"
+                id="keep_duplicates"
+                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400"
+              />
               <span class="ml-2 text-gray-700 font-medium">Keep Duplicates</span>
             </label>
             <label class="inline-flex items-center" for="debug_mode">
-              <input type="checkbox" id="debug_mode" name="debug_mode"
-                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+              <input
+                type="checkbox"
+                id="debug_mode"
+                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400"
+              />
               <span class="ml-2 text-gray-700 font-medium">Debug Mode</span>
             </label>
           </div>
 
           <div class="text-center">
-            <button type="submit"
+            <button
+              type="submit"
               class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
-              aria-label="Start scraping job">
+              aria-label="Start scraping job"
+            >
               Start Scraping
             </button>
           </div>
@@ -79,11 +178,14 @@
 
       <!-- Scraping Jobs -->
       <section class="mb-12 max-w-4xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+        <div
+          class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"
+        >
           <h2 class="text-2xl font-semibold text-gray-800">Scraping Jobs</h2>
-          <button id="refresh-jobs"
+          <button
+            id="refresh-jobs"
             class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            aria-label="Refresh scraping jobs">
+          >
             Refresh
           </button>
         </div>
@@ -94,160 +196,190 @@
 
       <!-- Available CSVs -->
       <section class="mb-12 max-w-4xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
+        <div
+          class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"
+        >
           <h2 class="text-2xl font-semibold text-gray-800">Available CSVs</h2>
-          <button id="refresh-csvs"
+          <button
+            id="refresh-csvs"
             class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-            aria-label="Refresh CSVs">
+          >
             Refresh
           </button>
         </div>
-        <div id="csv-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
+        <ul id="csv-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
           <li class="text-center text-gray-500">No CSVs available yet.</li>
-        </div>
+        </ul>
       </section>
     </div>
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        const form = document.querySelector("form[action='/api/v1/scrape']");
+        const form = document.getElementById("scrape-form");
         const makeInput = document.getElementById("car_make");
         const modelInput = document.getElementById("car_model");
         const siteSelect = document.getElementById("site");
+        const urlInput = document.getElementById("scrape_url");
+        const makeModelFields = document.getElementById("make-model-fields");
+        const urlField = document.getElementById("url-field");
+        const keepDuplicatesLabel = document.getElementById("keep-duplicates-label");
+        const scrapeMethodRadios = document.querySelectorAll("input[name='scrape_method']");
         const jobList = document.getElementById("job-list");
         let currentJobId = null;
         let lastFileCount = 0;
 
+        // Toggle form fields
+        function toggleFormFields() {
+          const method = document.querySelector("input[name='scrape_method']:checked").value;
+          if (method === "url") {
+            makeModelFields.classList.add("hidden");
+            urlField.classList.remove("hidden");
+            keepDuplicatesLabel.classList.add("hidden");
+          } else {
+            makeModelFields.classList.remove("hidden");
+            urlField.classList.add("hidden");
+            keepDuplicatesLabel.classList.remove("hidden");
+          }
+        }
+        toggleFormFields();
+        scrapeMethodRadios.forEach(r => r.addEventListener("change", toggleFormFields));
+
+        // Job handling
         const loadJobs = () => {
           const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
           renderJobs(jobs);
         };
-
         const saveJob = (job) => {
           const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
           jobs.push(job);
           localStorage.setItem("scrapingJobs", JSON.stringify(jobs));
           renderJobs(jobs);
         };
-
         const renderJobs = (jobs) => {
-          jobs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+          jobs.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
           jobList.innerHTML = jobs.length
             ? jobs.map(job => `
               <div class="flex flex-col p-4 border border-gray-200 rounded-lg">
                 <div class="flex justify-between">
-                  <span>${job.make} ${job.model} (${job.status})</span>
-                  <span>${new Date(job.startedAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}</span>
+                  <span>${job.url || `${job.make} ${job.model}`} (${job.status})</span>
+                  <span>${new Date(job.startedAt).toLocaleString()}</span>
                 </div>
                 ${job.status !== "completed"
                   ? `<div class="mt-2">
                       <p class="text-sm text-gray-600">${getStatusMessage(job)}</p>
                       <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                        <div class="h-2.5 rounded-full" style="width: ${job.progress}%; background-color: ${job.status === "failed" ? "#ef4444" : "#3b82f6"}"></div>
+                        <div class="h-2.5 rounded-full" style="width:${job.progress}%;background-color:${job.status === "failed" ? "#ef4444" : "#3b82f6"}"></div>
                       </div>
                       <p class="text-sm text-gray-600 mt-1">${job.progress}%</p>
-                    </div>`
-                  : ""}
+                    </div>` : ""}
               </div>`).join("")
             : "<p class='text-center text-gray-600'>No scraping jobs yet.</p>";
         };
-
         const getStatusMessage = (job) => {
           if (job.progress === 0) return "Initializing scraping job...";
-          if (job.progress <= 10) return `Started scraping ${job.make} ${job.model}...`;
+          if (job.progress <= 10) return job.url ? `Started scraping URL: ${job.url}` : `Started scraping ${job.make} ${job.model}`;
           if (job.progress <= 70) return "Navigating sites and validating results...";
           if (job.progress <= 100) return "Saving results to CSV...";
           return "Processing...";
         };
 
+        // Submit
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
-          [makeInput, modelInput, siteSelect].forEach(el => el.classList.remove("border-red-500"));
+          const method = document.querySelector("input[name='scrape_method']:checked").value;
+          [makeInput, modelInput, siteSelect, urlInput].forEach(el => el.classList.remove("border-red-500"));
           let hasError = false;
-          if (!makeInput.value.trim()) { makeInput.classList.add("border-red-500"); hasError = true; }
-          if (!modelInput.value.trim()) { modelInput.classList.add("border-red-500"); hasError = true; }
-          if (!siteSelect.value.trim()) { siteSelect.classList.add("border-red-500"); hasError = true; }
+          if (method === "make_model") {
+            if (!makeInput.value.trim()) { makeInput.classList.add("border-red-500"); hasError = true; }
+            if (!modelInput.value.trim()) { modelInput.classList.add("border-red-500"); hasError = true; }
+            if (!siteSelect.value.trim()) { siteSelect.classList.add("border-red-500"); hasError = true; }
+          } else {
+            if (!urlInput.value.trim()) { urlInput.classList.add("border-red-500"); hasError = true; }
+          }
           if (hasError) return;
 
-          const payload = {
-            make: makeInput.value.trim(),
-            model: modelInput.value.trim(),
-            transmission: document.getElementById("transmission").value,
-            site: siteSelect.value,
-            keep_duplicates: document.getElementById("keep_duplicates").checked,
-            debug_mode: document.getElementById("debug_mode").checked
-          };
+          const payload = method === "make_model"
+            ? { method, make: makeInput.value.trim(), model: modelInput.value.trim(), transmission: document.getElementById("transmission").value, site: siteSelect.value, keep_duplicates: document.getElementById("keep_duplicates").checked, debug_mode: document.getElementById("debug_mode").checked }
+            : { method, url: urlInput.value.trim(), keep_duplicates: false, debug_mode: document.getElementById("debug_mode").checked };
 
           try {
             alert("🚀 Starting scraping job...");
-            const res = await fetch("/api/v1/scrape", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-            let data;
-            try { data = await res.json(); } catch { data = await res.text(); }
-            if (!res.ok) { alert(`❌ Failed: ${res.status}\n${JSON.stringify(data)}`); return; }
-
+            const res = await fetch("/api/v1/scrape", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            const data = await res.json();
+            if (!res.ok) { alert(`❌ Failed: ${data.message || "Unknown error"}`); return; }
             currentJobId = data.payload.jobId;
             saveJob({ ...payload, jobId: currentJobId, status: "in progress", progress: 10, startedAt: new Date().toISOString() });
             monitorJobProgress(currentJobId);
-            alert("✅ Scraping job completed successfully!");
-          } catch (err) { alert("❌ Request failed. Check console for details."); console.error(err); }
+          } catch (err) {
+            console.error(err);
+            alert("❌ Request failed. Check console.");
+          }
         });
 
+        // Monitor job progress
         const monitorJobProgress = (jobId) => {
           const interval = setInterval(async () => {
             try {
               const res = await fetch(`/api/v1/scrape/status/${jobId}`);
-              if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
               const job = await res.json();
               const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
-              const updatedJobs = jobs.map(j => j.jobId === jobId ? { ...j, ...job } : j);
-              localStorage.setItem("scrapingJobs", JSON.stringify(updatedJobs));
-              renderJobs(updatedJobs);
-              if (job.status === "completed" || job.status === "failed") { clearInterval(interval); loadCSVs(); }
-            } catch (err) { clearInterval(interval); console.error(err); }
-          }, 250);
+              const updated = jobs.map(j => j.jobId === jobId ? { ...j, ...job } : j);
+              localStorage.setItem("scrapingJobs", JSON.stringify(updated));
+              renderJobs(updated);
+              if (job.status === "completed" || job.status === "failed") {
+                clearInterval(interval);
+                loadCSVs();
+              }
+            } catch (err) {
+              clearInterval(interval);
+              console.error(err);
+            }
+          }, 1000);
         };
 
+        // CSV section
         async function loadCSVs() {
           const list = document.getElementById("csv-list");
           list.innerHTML = "<li class='text-center'>Loading CSVs...</li>";
           try {
             const res = await fetch("/api/v1/csv");
-            if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
             const files = await res.json();
             list.innerHTML = "";
-            if (!files.length) { list.innerHTML = "<li class='text-center text-gray-500'>No CSVs available yet.</li>"; lastFileCount = 0; return; }
+            if (!files.length) {
+              list.innerHTML = "<li class='text-center text-gray-500'>No CSVs available yet.</li>";
+              lastFileCount = 0;
+              return;
+            }
             lastFileCount = files.length;
             files.forEach(file => {
               const li = document.createElement("li");
               li.className = "flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg border border-gray-200";
-              const createdAt = new Date(file.createdAt).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
-              li.innerHTML = `<span>${file.fileName} <span class="text-gray-600 text-sm">(${createdAt})</span></span>
-                <a href="/download/${file.fileName}" 
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                  Download
-                </a>`;
+              li.innerHTML = `
+                <span>${file.fileName}</span>
+                <a href="/download/${file.fileName}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Download</a>`;
               list.appendChild(li);
             });
-          } catch (err) { console.error(err); list.innerHTML = "<li class='text-center text-red-500'>Failed to load CSVs.</li>"; lastFileCount = 0; }
+          } catch (err) {
+            console.error(err);
+            list.innerHTML = "<li class='text-center text-red-500'>Failed to load CSVs.</li>";
+          }
         }
 
         function startPolling() {
           setInterval(async () => {
             try {
               const res = await fetch("/api/v1/csv");
-              if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
               const files = await res.json();
-              if (files.length !== lastFileCount) { loadCSVs(); }
-            } catch (err) { console.error(err); }
+              if (files.length !== lastFileCount) loadCSVs();
+            } catch (err) {
+              console.error(err);
+            }
           }, 10000);
         }
 
         document.getElementById("refresh-jobs").addEventListener("click", loadJobs);
         document.getElementById("refresh-csvs").addEventListener("click", loadCSVs);
+
         loadJobs();
         loadCSVs();
         startPolling();

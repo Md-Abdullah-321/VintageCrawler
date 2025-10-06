@@ -18,18 +18,20 @@ import { successResponse } from "./responseController.js";
 // Start Scraping Job
 export const startScrapingJob = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { make, model, transmission, site, keep_duplicates = false, debug_mode = false, } = req.body;
+        const { method, make = "", model = "", transmission = "", site = "", keep_duplicates = false, debug_mode = false, url = "", } = req.body;
         // Validate required fields
-        if (!make || !model) {
+        if ((method === "url" && !url) || (method === "make_model" && (!make || !model))) {
             res.status(400).json({
                 status: "error",
-                message: "Make and model are required fields.",
+                message: "Missing required fields",
             });
             return;
         }
         // Start a scraping job
-        const response = yield startScraping(make, model, transmission, site, Boolean(keep_duplicates), Boolean(debug_mode));
-        successResponse(res, response);
+        const response = yield startScraping(method, url, make, model, transmission, site, Boolean(keep_duplicates), Boolean(debug_mode));
+        if (response) {
+            successResponse(res, response);
+        }
     }
     catch (error) {
         next(error);

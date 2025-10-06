@@ -18,25 +18,29 @@ export const startScrapingJob = async (
 ): Promise<void> => {
   try {
     const {
-      make,
-      model,
-      transmission,
-      site,
+      method,
+      make = "",
+      model = "",
+      transmission = "",
+      site = "",
       keep_duplicates = false,
       debug_mode = false,
+      url = "",
     } = req.body;
 
     // Validate required fields
-    if (!make || !model) {
+    if ((method === "url" && !url) || (method === "make_model" && (!make || !model))) {
       res.status(400).json({
         status: "error",
-        message: "Make and model are required fields.",
+        message: "Missing required fields",
       });
       return;
     }
-
+    
     // Start a scraping job
     const response = await startScraping(
+      method,
+      url,
       make,
       model,
       transmission,
@@ -45,7 +49,9 @@ export const startScrapingJob = async (
       Boolean(debug_mode)
     );
 
-    successResponse(res, response);
+    if (response) {
+      successResponse(res, response);
+    }
   } catch (error) {
     next(error);
   }
