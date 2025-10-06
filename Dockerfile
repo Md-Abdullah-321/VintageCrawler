@@ -1,6 +1,6 @@
 FROM node:22.20.0
 
-# Install dependencies needed for Puppeteer/Chrome
+# Install Puppeteer/Chrome dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -37,8 +37,8 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-# Install libnspr4 from Debian repositories
-RUN apt-get update && apt-get install -y libnspr4
+# Create the missing symlink Puppeteer/Chrome expects
+RUN ln -s /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.1 || true
 
 # App setup
 WORKDIR /app
