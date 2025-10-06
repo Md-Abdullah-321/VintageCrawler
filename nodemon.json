@@ -1,0 +1,6 @@
+{
+  "ignore": ["output/*", "output/**/*", "*.csv", "*.json"],
+  "watch": ["dist/"],
+  "ext": "js",
+  "verbose": true
+}

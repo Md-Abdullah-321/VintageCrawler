@@ -16,6 +16,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { Router } from "express";
 import fs from "fs/promises";
 import path from "path";
+import { getJobStatus } from "../Services/scrap.service.js";
 const csvRoutes = Router();
 const outputDir = path.join(process.cwd(), "output");
 csvRoutes.get("/csv", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -31,12 +32,14 @@ csvRoutes.get("/csv", (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const fileDetails = yield Promise.all(files.map((file) => __awaiter(void 0, void 0, void 0, function* () {
             const filePath = path.join(outputDir, file);
             const stats = yield fs.stat(filePath);
+            const jobId = file.replace(".csv", "");
+            const job = getJobStatus(jobId); // Fetch job metadata from scrap.service.ts
             return {
                 fileName: file,
-                createdAt: stats.birthtime.toISOString(),
+                startedAt: job.startedAt || stats.birthtime.toISOString() // Use startedAt or fallback to createdAt
             };
         })));
-        fileDetails.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        fileDetails.sort((a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime());
         res.json(fileDetails);
     }
     catch (err) {

@@ -20,10 +20,15 @@ import dotenv from "dotenv";
 import re from "re2";
 import { wait } from "../helpers/utils.js";
 dotenv.config();
-export const scrapClassicValuer = (browser, page, make, model, transmission) => __awaiter(void 0, void 0, void 0, function* () {
+export const scrapClassicValuer = (method, browser, page, make, model, transmission, url) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // Navigate to Classic Valuer
-        yield gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL, 60000);
+        if (method === "make_model") {
+            yield gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL || "");
+        }
+        else if (method === "url") {
+            yield gotoPage(page, url);
+        }
         console.log("📄 Page loaded:", yield page.title());
         // --- Scraping setup ---
         let results = [];
@@ -87,12 +92,15 @@ export const scrapClassicValuer = (browser, page, make, model, transmission) => 
                 console.error("Error parsing API response:", err);
             }
         }));
-        // --- Do the search ---
-        yield clickElement(page, '[name="enter-a make and/or model"]');
-        yield wait(1500);
-        yield typeLikeHuman(page, '[placeholder="Enter a make and/or model"]', `${make} ${model} ${transmission}`.trim());
-        yield wait(1500);
-        yield page.keyboard.press("Enter");
+        // --- Perform search by make/model ---
+        if (method === "make_model") {
+            // --- Do the search ---
+            yield clickElement(page, '[name="enter-a make and/or model"]');
+            yield wait(1500);
+            yield typeLikeHuman(page, '[placeholder="Enter a make and/or model"]', `${make} ${model} ${transmission}`.trim());
+            yield wait(1500);
+            yield page.keyboard.press("Enter");
+        }
         // --- Wait for container ---
         try {
             const container = yield page.waitForSelector(CONTAINER_SELECTOR, {

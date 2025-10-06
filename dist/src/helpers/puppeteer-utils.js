@@ -16,31 +16,51 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import puppeteerExtra from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 puppeteerExtra.use(StealthPlugin());
-export const launchBrowser = (headless) => __awaiter(void 0, void 0, void 0, function* () {
-    const browser = yield puppeteerExtra.launch({
-        headless,
-        args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-blink-features=AutomationControlled",
-            "--window-size=1920,1080",
-        ],
-        defaultViewport: { width: 1920, height: 1080, deviceScaleFactor: 1 },
-    });
-    console.info("Browser launched successfully.");
-    return browser;
+export const launchBrowser = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (headless = true) {
+    try {
+        console.log(`Attempting to launch browser in ${headless ? "headless" : "headful"} mode...`);
+        const browser = yield puppeteerExtra.launch({
+            headless: headless,
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-blink-features=AutomationControlled",
+                "--window-size=1920,1080",
+            ],
+            defaultViewport: { width: 1920, height: 1080, deviceScaleFactor: 1 },
+            timeout: 30000,
+        });
+        console.log("Browser launched successfully.");
+        return browser;
+    }
+    catch (error) {
+        console.error("❌ Failed to launch browser:", error.message, error.stack);
+        throw new Error(`Failed to launch browser: ${error.message}`);
+    }
 });
 export const createPage = (browser) => __awaiter(void 0, void 0, void 0, function* () {
-    const page = yield browser.newPage();
-    yield page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-    yield page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9" });
-    console.info("New page created successfully.");
-    return page;
+    try {
+        console.log("Creating new page...");
+        const page = yield browser.newPage();
+        yield page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        yield page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9" });
+        console.log("New page created successfully.");
+        return page;
+    }
+    catch (error) {
+        console.error("❌ Failed to create page:", error.message, error.stack);
+        throw new Error(`Failed to create page: ${error.message}`);
+    }
 });
 export const closeBrowser = (browser) => __awaiter(void 0, void 0, void 0, function* () {
-    if (browser)
-        yield browser.close();
-    console.info("Browser closed successfully.");
-    return;
+    try {
+        if (browser) {
+            yield browser.close();
+            console.log("Browser closed successfully.");
+        }
+    }
+    catch (error) {
+        console.error("❌ Failed to close browser:", error.message, error.stack);
+    }
 });

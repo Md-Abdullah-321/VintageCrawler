@@ -19,15 +19,21 @@ import { wait } from "../helpers/utils.js";
 dotenv.config();
 
 export const scrapClassicValuer = async (
+  method: string,
   browser: any,
   page: any,
   make: string,
   model: string,
-  transmission: string
+  transmission: string,
+  url: string
 ) => {
   try {
     // Navigate to Classic Valuer
-    await gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL!, 60000);
+    if (method === "make_model") {
+      await gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL || "");
+    } else if (method === "url") {
+      await gotoPage(page, url); 
+    }
 
     console.log("📄 Page loaded:", await page.title());
 
@@ -106,18 +112,21 @@ export const scrapClassicValuer = async (
       }
     });
 
-    // --- Do the search ---
-    await clickElement(page, '[name="enter-a make and/or model"]');
-    await wait(1500);
+    // --- Perform search by make/model ---
+    if (method === "make_model") {
+      // --- Do the search ---
+      await clickElement(page, '[name="enter-a make and/or model"]');
+      await wait(1500);
 
-    await typeLikeHuman(
-      page,
-      '[placeholder="Enter a make and/or model"]',
-      `${make} ${model} ${transmission}`.trim()
-    );
+      await typeLikeHuman(
+        page,
+        '[placeholder="Enter a make and/or model"]',
+        `${make} ${model} ${transmission}`.trim()
+      );
 
-    await wait(1500);
-    await page.keyboard.press("Enter");
+      await wait(1500);
+      await page.keyboard.press("Enter");
+    }
 
     // --- Wait for container ---
     try {

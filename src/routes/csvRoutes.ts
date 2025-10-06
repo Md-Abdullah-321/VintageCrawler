@@ -8,13 +8,14 @@
 import { Router } from "express";
 import fs from "fs/promises";
 import path from "path";
+import { getJobStatus } from "../Services/scrap.service.js";
 
 const csvRoutes = Router();
 const outputDir = path.join(process.cwd(), "output");
 
 interface FileDetail {
   fileName: string;
-  createdAt: string;
+  startedAt: string | null;
 }
 
 csvRoutes.get("/csv", async (req, res) => {
@@ -32,14 +33,16 @@ csvRoutes.get("/csv", async (req, res) => {
       files.map(async (file) => {
         const filePath = path.join(outputDir, file);
         const stats = await fs.stat(filePath);
+        const jobId = file.replace(".csv", "");
+        const job = getJobStatus(jobId); // Fetch job metadata from scrap.service.ts
         return {
           fileName: file,
-          createdAt: stats.birthtime.toISOString(),
+          startedAt: job.startedAt || stats.birthtime.toISOString() // Use startedAt or fallback to createdAt
         };
       })
     );
 
-    fileDetails.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    fileDetails.sort((a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime());
     res.json(fileDetails);
   } catch (err) {
     console.error("❌ Error listing CSVs:", err);

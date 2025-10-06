@@ -33,9 +33,9 @@
         >
           <!-- Scraping Method Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >Scraping Method</label
-            >
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Scraping Method
+            </label>
             <div class="flex space-x-4">
               <label class="inline-flex items-center">
                 <input
@@ -65,11 +65,9 @@
             class="grid grid-cols-1 sm:grid-cols-2 gap-6"
           >
             <div>
-              <label
-                for="car_make"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Car Make</label
-              >
+              <label for="car_make" class="block text-sm font-medium text-gray-700 mb-2">
+                Car Make
+              </label>
               <input
                 type="text"
                 id="car_make"
@@ -78,11 +76,9 @@
               />
             </div>
             <div>
-              <label
-                for="car_model"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Car Model</label
-              >
+              <label for="car_model" class="block text-sm font-medium text-gray-700 mb-2">
+                Car Model
+              </label>
               <input
                 type="text"
                 id="car_model"
@@ -91,11 +87,9 @@
               />
             </div>
             <div>
-              <label
-                for="transmission"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Transmission</label
-              >
+              <label for="transmission" class="block text-sm font-medium text-gray-700 mb-2">
+                Transmission
+              </label>
               <select
                 id="transmission"
                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -106,11 +100,9 @@
               </select>
             </div>
             <div>
-              <label
-                for="site"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Select Site</label
-              >
+              <label for="site" class="block text-sm font-medium text-gray-700 mb-2">
+                Select Site
+              </label>
               <select
                 id="site"
                 class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -125,11 +117,9 @@
 
           <!-- URL Field -->
           <div id="url-field" class="hidden">
-            <label
-              for="scrape_url"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >URL</label
-            >
+            <label for="scrape_url" class="block text-sm font-medium text-gray-700 mb-2">
+              URL
+            </label>
             <input
               type="url"
               id="scrape_url"
@@ -142,11 +132,7 @@
             id="options-section"
             class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
-            <label
-              id="keep-duplicates-label"
-              class="inline-flex items-center"
-              for="keep_duplicates"
-            >
+            <label id="keep-duplicates-label" class="inline-flex items-center" for="keep_duplicates">
               <input
                 type="checkbox"
                 id="keep_duplicates"
@@ -168,7 +154,6 @@
             <button
               type="submit"
               class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
-              aria-label="Start scraping job"
             >
               Start Scraping
             </button>
@@ -178,14 +163,9 @@
 
       <!-- Scraping Jobs -->
       <section class="mb-12 max-w-4xl mx-auto">
-        <div
-          class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"
-        >
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
           <h2 class="text-2xl font-semibold text-gray-800">Scraping Jobs</h2>
-          <button
-            id="refresh-jobs"
-            class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
+          <button id="refresh-jobs" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm">
             Refresh
           </button>
         </div>
@@ -196,14 +176,9 @@
 
       <!-- Available CSVs -->
       <section class="mb-12 max-w-4xl mx-auto">
-        <div
-          class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3"
-        >
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
           <h2 class="text-2xl font-semibold text-gray-800">Available CSVs</h2>
-          <button
-            id="refresh-csvs"
-            class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          >
+          <button id="refresh-csvs" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm">
             Refresh
           </button>
         </div>
@@ -228,7 +203,6 @@
         let currentJobId = null;
         let lastFileCount = 0;
 
-        // Toggle form fields
         function toggleFormFields() {
           const method = document.querySelector("input[name='scrape_method']:checked").value;
           if (method === "url") {
@@ -244,46 +218,57 @@
         toggleFormFields();
         scrapeMethodRadios.forEach(r => r.addEventListener("change", toggleFormFields));
 
-        // Job handling
         const loadJobs = () => {
           const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
           renderJobs(jobs);
         };
+
         const saveJob = (job) => {
           const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
           jobs.push(job);
           localStorage.setItem("scrapingJobs", JSON.stringify(jobs));
           renderJobs(jobs);
         };
+
         const renderJobs = (jobs) => {
           jobs.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
           jobList.innerHTML = jobs.length
             ? jobs.map(job => `
               <div class="flex flex-col p-4 border border-gray-200 rounded-lg">
                 <div class="flex justify-between">
-                  <span>${job.url || `${job.make} ${job.model}`} (${job.status})</span>
+                  <span>${job.url || `${job.make} ${job.model}`}</span>
                   <span>${new Date(job.startedAt).toLocaleString()}</span>
                 </div>
-                ${job.status !== "completed"
-                  ? `<div class="mt-2">
-                      <p class="text-sm text-gray-600">${getStatusMessage(job)}</p>
-                      <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                        <div class="h-2.5 rounded-full" style="width:${job.progress}%;background-color:${job.status === "failed" ? "#ef4444" : "#3b82f6"}"></div>
-                      </div>
-                      <p class="text-sm text-gray-600 mt-1">${job.progress}%</p>
-                    </div>` : ""}
-              </div>`).join("")
+                <div class="mt-2 flex justify-between items-center">
+                  <p class="text-sm text-gray-600 font-medium">${job.status.toUpperCase()} - ${job.progress}%</p>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                  <div class="h-2.5 rounded-full" 
+                       style="width:${job.progress}%; background-color:${job.status === 'failed' ? '#ef4444' : '#3b82f6'}">
+                  </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">${getStatusMessage(job)}</p>
+              </div>
+            `).join("")
             : "<p class='text-center text-gray-600'>No scraping jobs yet.</p>";
         };
+
         const getStatusMessage = (job) => {
-          if (job.progress === 0) return "Initializing scraping job...";
-          if (job.progress <= 10) return job.url ? `Started scraping URL: ${job.url}` : `Started scraping ${job.make} ${job.model}`;
-          if (job.progress <= 70) return "Navigating sites and validating results...";
-          if (job.progress <= 100) return "Saving results to CSV...";
-          return "Processing...";
+          switch (job.status) {
+            case "in progress":
+              if (job.progress <= 10) return "Initializing scraping job...";
+              if (job.progress <= 50) return "Navigating sites and validating results...";
+              if (job.progress < 100) return "Saving results to CSV...";
+              return "Almost done...";
+            case "completed":
+              return "Job completed successfully!";
+            case "failed":
+              return "Job failed. Check logs for details.";
+            default:
+              return "Waiting...";
+          }
         };
 
-        // Submit
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
           const method = document.querySelector("input[name='scrape_method']:checked").value;
@@ -316,7 +301,6 @@
           }
         });
 
-        // Monitor job progress
         const monitorJobProgress = (jobId) => {
           const interval = setInterval(async () => {
             try {
@@ -337,7 +321,6 @@
           }, 1000);
         };
 
-        // CSV section
         async function loadCSVs() {
           const list = document.getElementById("csv-list");
           list.innerHTML = "<li class='text-center'>Loading CSVs...</li>";
@@ -354,9 +337,14 @@
             files.forEach(file => {
               const li = document.createElement("li");
               li.className = "flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg border border-gray-200";
+              const formattedDate = file.startedAt ? new Date(file.startedAt).toLocaleString() : "Unknown";
               li.innerHTML = `
-                <span>${file.fileName}</span>
-                <a href="/download/${file.fileName}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Download</a>`;
+                <div class="flex flex-col">
+                  <span class="font-medium">${file.fileName}</span>
+                  <span class="text-sm text-gray-600">Scraped: ${formattedDate}</span>
+                </div>
+                <a href="/download/${file.fileName}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Download</a>
+              `;
               list.appendChild(li);
             });
           } catch (err) {
