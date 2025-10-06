@@ -1,10 +1,7 @@
-FROM node:22-alpine
-
+FROM node:20
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npx tsc
-
-EXPOSE 3000
+EXPOSE 8000
 CMD ["node", "dist/index.js"]
