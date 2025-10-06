@@ -1,8 +1,10 @@
-FROM node:20
+FROM node:22.20.0
 
-# Install necessary libraries for Puppeteer/Chrome
+# Install required libraries for Puppeteer/Chrome
 RUN apt-get update && apt-get install -y \
-    gconf-service \
+    wget \
+    ca-certificates \
+    fonts-liberation \
     libasound2 \
     libatk1.0-0 \
     libc6 \
@@ -16,7 +18,6 @@ RUN apt-get update && apt-get install -y \
     libgdk-pixbuf2.0-0 \
     libglib2.0-0 \
     libgtk-3-0 \
-    libnspr4 \
     libnss3 \
     libpango-1.0-0 \
     libx11-6 \
@@ -32,21 +33,22 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libxss1 \
     libxtst6 \
-    ca-certificates \
-    fonts-liberation \
     lsb-release \
-    wget \
-    curl \
     xdg-utils \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-# Ensure libnspr4.so.1 exists for Puppeteer
+# Install specific libnspr4 version to fix Puppeteer/Chrome issues
+RUN wget http://ftp.us.debian.org/debian/pool/main/n/nspr/libnspr4_4.39-1_amd64.deb && \
+    dpkg -i libnspr4_4.39-1_amd64.deb && rm libnspr4_4.39-1_amd64.deb
+
+# Ensure the .so.1 symlink exists
 RUN ln -sf /usr/lib/x86_64-linux-gnu/libnspr4.so /usr/lib/x86_64-linux-gnu/libnspr4.so.1
 
+# App setup
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 EXPOSE 8000
+
 CMD ["node", "dist/index.js"]
