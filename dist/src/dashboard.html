@@ -165,9 +165,14 @@
       <section class="mb-12 max-w-4xl mx-auto">
         <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
           <h2 class="text-2xl font-semibold text-gray-800">Scraping Jobs</h2>
-          <button id="refresh-jobs" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm">
-            Refresh
-          </button>
+          <div class="flex gap-3">
+            <button id="refresh-jobs" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm">
+              Refresh
+            </button>
+            <button id="clear-storage" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl shadow-sm">
+              Clear Storage
+            </button>
+          </div>
         </div>
         <div id="job-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
           <p class="text-center text-gray-600">No scraping jobs yet.</p>
@@ -367,6 +372,11 @@
 
         document.getElementById("refresh-jobs").addEventListener("click", loadJobs);
         document.getElementById("refresh-csvs").addEventListener("click", loadCSVs);
+        document.getElementById("clear-storage").addEventListener("click", () => {
+          localStorage.removeItem("scrapingJobs");
+          loadJobs();
+          alert("Local storage cleared.");
+        });
 
         loadJobs();
         loadCSVs();

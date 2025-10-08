@@ -13,6 +13,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import puppeteer from "puppeteer";
 import puppeteerExtra from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 puppeteerExtra.use(StealthPlugin());
@@ -20,16 +21,21 @@ export const launchBrowser = (...args_1) => __awaiter(void 0, [...args_1], void 
     try {
         console.log(`Attempting to launch browser in ${headless ? "headless" : "headful"} mode...`);
         const browser = yield puppeteerExtra.launch({
-            headless: headless,
+            headless: true, // always headless in VPS Docker
             args: [
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
                 "--disable-dev-shm-usage",
+                "--disable-accelerated-2d-canvas",
+                "--disable-gpu",
+                "--no-zygote",
+                "--single-process",
                 "--disable-blink-features=AutomationControlled",
                 "--window-size=1920,1080",
             ],
-            defaultViewport: { width: 1920, height: 1080, deviceScaleFactor: 1 },
-            timeout: 30000,
+            defaultViewport: { width: 1920, height: 1080 },
+            timeout: 0,
+            executablePath: puppeteer.executablePath(),
         });
         console.log("Browser launched successfully.");
         return browser;
