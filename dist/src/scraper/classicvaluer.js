@@ -123,7 +123,7 @@ export const scrapClassicValuer = (method, browser, page, make, model, transmiss
             console.log("⚠️ First API response did not arrive in time.");
         }
         console.log(`📄 Maximum pages to scrape: ${maxPages || "unknown"}`);
-        // --- Pagination loop (wait for API instead of fixed 3s) ---
+        // --- Pagination loop (wait for API instead of fixed timeout) ---
         while (currentPage < maxPages) {
             const nextBtn = yield page.$(NEXT_BUTTON_SELECTOR);
             if (!nextBtn) {
@@ -132,13 +132,12 @@ export const scrapClassicValuer = (method, browser, page, make, model, transmiss
             }
             try {
                 currentPage++;
+                console.log(`➡️ Going to page ${currentPage}...`);
                 yield nextBtn.scrollIntoViewIfNeeded();
                 yield nextBtn.click();
-                // Wait for the API response corresponding to this page
-                yield Promise.race([
-                    new Promise((resolve) => pageApiEvent.once("page", resolve)),
-                    wait(10000), // fallback if API is slow
-                ]);
+                // Force wait for 30 seconds
+                yield new Promise((resolve) => setTimeout(resolve, 30000));
+                console.log(`⏱ Waited 30 seconds for page ${currentPage}`);
             }
             catch (err) {
                 console.log(`⚠️ Pagination stopped at page ${currentPage}:`, err.message);

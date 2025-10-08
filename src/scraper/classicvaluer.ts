@@ -153,8 +153,8 @@ export const scrapClassicValuer = async (
 
     console.log(`📄 Maximum pages to scrape: ${maxPages || "unknown"}`);
 
-    // --- Pagination loop (wait for API instead of fixed 3s) ---
-    while (currentPage < maxPages) {
+   // --- Pagination loop (wait for API instead of fixed timeout) ---
+   while (currentPage < maxPages) {
       const nextBtn = await page.$(NEXT_BUTTON_SELECTOR);
       if (!nextBtn) {
         console.log(`✅ No more Next button after page ${currentPage}.`);
@@ -163,23 +163,21 @@ export const scrapClassicValuer = async (
 
       try {
         currentPage++;
+        console.log(`➡️ Going to page ${currentPage}...`);
+
         await nextBtn.scrollIntoViewIfNeeded();
         await nextBtn.click();
 
-        // Wait for the API response corresponding to this page
-        await Promise.race([
-          new Promise((resolve) => pageApiEvent.once("page", resolve)),
-          wait(10000), // fallback if API is slow
-        ]);
+        // Force wait for 30 seconds
+        await new Promise((resolve) => setTimeout(resolve, 30000));
+        
+        console.log(`⏱ Waited 30 seconds for page ${currentPage}`);
       } catch (err: any) {
-        console.log(
-          `⚠️ Pagination stopped at page ${currentPage}:`,
-          err.message
-        );
+        console.log(`⚠️ Pagination stopped at page ${currentPage}:`, err.message);
         break;
       }
     }
-
+    
     return results;
   } catch (error) {
     console.error("❌ Error scraping Classic Valuer:", error);
