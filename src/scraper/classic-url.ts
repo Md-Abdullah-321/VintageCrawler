@@ -102,7 +102,7 @@ export const scrapeClassicComWithURL = async (
         console.log("⏳ Waiting for next page to load...");
         updateJob(jobId, {}, "Waiting for next page to load...");
         await wait(5000);
-        await page.waitForSelector(".group", { timeout: 30000 }).catch(err => {
+        await page.waitForSelector(".group", { timeout: 60000 }).catch(err => {
           console.error("❌ Failed to load next page:", err);
           updateJob(jobId, {}, "Next page failed to load: " + err.message);
           throw new Error("Next page failed to load: " + err.message);

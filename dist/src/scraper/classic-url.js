@@ -81,7 +81,7 @@ export const scrapeClassicComWithURL = (targetUrl, page, jobId) => __awaiter(voi
                 console.log("⏳ Waiting for next page to load...");
                 updateJob(jobId, {}, "Waiting for next page to load...");
                 yield wait(5000);
-                yield page.waitForSelector(".group", { timeout: 30000 }).catch(err => {
+                yield page.waitForSelector(".group", { timeout: 60000 }).catch(err => {
                     console.error("❌ Failed to load next page:", err);
                     updateJob(jobId, {}, "Next page failed to load: " + err.message);
                     throw new Error("Next page failed to load: " + err.message);
