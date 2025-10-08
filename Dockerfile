@@ -1,6 +1,6 @@
 FROM node:22.20.0
 
-# Install the minimal set of dependencies for current Chromium/Puppeteer
+# Install dependencies for Chromium / Puppeteer
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     fonts-liberation \
@@ -18,12 +18,25 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 \
     libxrandr2 \
     libxtst6 \
-    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
+
+# Copy package.json and install dependencies
 COPY package*.json ./
 RUN npm install
+
+# Copy project files
 COPY . .
+
+# Increase shared memory for Chromium
+# Optional: will work if you run container with --shm-size
+ENV PUPPETEER_CHROMIUM_FLAGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu --no-zygote --single-process"
+
+# Expose your app port
 EXPOSE 8000
 
+# Launch app
 CMD ["node", "dist/index.js"]
