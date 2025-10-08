@@ -122,7 +122,7 @@ export const startScraping = (method, url, make, model, transmission, site, keep
     let allResults = [];
     const handleResults = (results) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            if (!keep_duplicates) {
+            if (!keep_duplicates && method === "make_model") {
                 const uniqueResults = Array.from(new Map(results.map(item => [item.url || item.id, item])).values());
                 allResults = allResults.concat(uniqueResults);
             }

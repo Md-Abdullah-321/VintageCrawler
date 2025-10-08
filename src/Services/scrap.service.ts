@@ -126,11 +126,11 @@ export const startScraping = async (
     throw err;
   }
 
-  let allResults: any[] = [];
+  let allResults: any[] = []; 
 
   const handleResults = async (results: any[]) => {
     try {
-      if (!keep_duplicates) {
+      if (!keep_duplicates && method === "make_model") {
         const uniqueResults = Array.from(new Map(results.map(item => [item.url || item.id, item])).values());
         allResults = allResults.concat(uniqueResults);
       } else {

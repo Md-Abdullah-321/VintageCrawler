@@ -1,3 +1,113 @@
 {
-  
+  "7fe52849-b495-4167-91c6-c19664853775": {
+    "status": "completed",
+    "progress": 100,
+    "fileName": "7fe52849-b495-4167-91c6-c19664853775.csv",
+    "startedAt": "2025-10-08T07:25:45.057Z",
+    "url": "https://www.theclassicvaluer.com/cars/porsche/911-(996)-gt3",
+    "make": "",
+    "model": "",
+    "transmission": "",
+    "site": "",
+    "logs": [
+      {
+        "message": "Job 7fe52849-b495-4167-91c6-c19664853775 started for method: url",
+        "timestamp": "2025-10-08T07:25:45.057Z"
+      },
+      {
+        "message": "Browser page created successfully.",
+        "timestamp": "2025-10-08T07:25:45.127Z"
+      },
+      {
+        "message": "Starting scrapClassicValuer for URL: https://www.theclassicvaluer.com/cars/porsche/911-(996)-gt3",
+        "timestamp": "2025-10-08T07:25:45.127Z"
+      },
+      {
+        "message": "scrapClassicValuer returned 124 results",
+        "timestamp": "2025-10-08T07:25:59.981Z"
+      },
+      {
+        "message": "Saving results to ./output/7fe52849-b495-4167-91c6-c19664853775.csv",
+        "timestamp": "2025-10-08T07:25:59.981Z"
+      },
+      {
+        "message": "Job 7fe52849-b495-4167-91c6-c19664853775 completed successfully",
+        "timestamp": "2025-10-08T07:25:59.986Z"
+      }
+    ]
+  },
+  "b65fa612-69ab-41fc-9f0e-79f0263a4190": {
+    "status": "completed",
+    "progress": 100,
+    "fileName": "b65fa612-69ab-41fc-9f0e-79f0263a4190.csv",
+    "startedAt": "2025-10-08T07:27:24.494Z",
+    "url": "https://www.theclassicvaluer.com/cars/porsche/911-(996)-gt3",
+    "make": "",
+    "model": "",
+    "transmission": "",
+    "site": "",
+    "logs": [
+      {
+        "message": "Job b65fa612-69ab-41fc-9f0e-79f0263a4190 started for method: url",
+        "timestamp": "2025-10-08T07:27:24.494Z"
+      },
+      {
+        "message": "Browser page created successfully.",
+        "timestamp": "2025-10-08T07:27:24.574Z"
+      },
+      {
+        "message": "Starting scrapClassicValuer for URL: https://www.theclassicvaluer.com/cars/porsche/911-(996)-gt3",
+        "timestamp": "2025-10-08T07:27:24.574Z"
+      },
+      {
+        "message": "scrapClassicValuer returned 124 results",
+        "timestamp": "2025-10-08T07:27:39.488Z"
+      },
+      {
+        "message": "Saving results to ./output/b65fa612-69ab-41fc-9f0e-79f0263a4190.csv",
+        "timestamp": "2025-10-08T07:27:39.488Z"
+      },
+      {
+        "message": "Job b65fa612-69ab-41fc-9f0e-79f0263a4190 completed successfully",
+        "timestamp": "2025-10-08T07:27:39.496Z"
+      }
+    ]
+  },
+  "1061d955-8a34-4234-ba29-424dab796f68": {
+    "status": "completed",
+    "progress": 100,
+    "fileName": "1061d955-8a34-4234-ba29-424dab796f68.csv",
+    "startedAt": "2025-10-08T07:29:47.016Z",
+    "url": "https://www.theclassicvaluer.com/cars/porsche/911-(996)-gt3",
+    "make": "",
+    "model": "",
+    "transmission": "",
+    "site": "",
+    "logs": [
+      {
+        "message": "Job 1061d955-8a34-4234-ba29-424dab796f68 started for method: url",
+        "timestamp": "2025-10-08T07:29:47.016Z"
+      },
+      {
+        "message": "Browser page created successfully.",
+        "timestamp": "2025-10-08T07:29:47.092Z"
+      },
+      {
+        "message": "Starting scrapClassicValuer for URL: https://www.theclassicvaluer.com/cars/porsche/911-(996)-gt3",
+        "timestamp": "2025-10-08T07:29:47.092Z"
+      },
+      {
+        "message": "scrapClassicValuer returned 0 results",
+        "timestamp": "2025-10-08T07:30:51.075Z"
+      },
+      {
+        "message": "Saving results to ./output/1061d955-8a34-4234-ba29-424dab796f68.csv",
+        "timestamp": "2025-10-08T07:30:51.075Z"
+      },
+      {
+        "message": "Job 1061d955-8a34-4234-ba29-424dab796f68 completed successfully",
+        "timestamp": "2025-10-08T07:30:51.076Z"
+      }
+    ]
+  }
 }
