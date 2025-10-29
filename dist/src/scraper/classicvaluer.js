@@ -38,7 +38,7 @@ export const scrapClassicValuer = (method, browser, page, make, model, transmiss
         const firstApiEvent = new EventEmitter();
         const pageApiEvent = new EventEmitter();
         const API_REGEX = new re("GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax", "i");
-        const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"][aria-disabled="false"]';
+        const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
         const CONTAINER_SELECTOR = "#comp-le47op7r";
         // --- Listen for API responses (BEFORE search) ---
         page.on("response", (response) => __awaiter(void 0, void 0, void 0, function* () {
@@ -94,7 +94,6 @@ export const scrapClassicValuer = (method, browser, page, make, model, transmiss
         }));
         // --- Perform search by make/model ---
         if (method === "make_model") {
-            // --- Do the search ---
             yield clickElement(page, '[name="enter-a make and/or model"]');
             yield wait(1500);
             yield typeLikeHuman(page, '[placeholder="Enter a make and/or model"]', `${make} ${model} ${transmission}`.trim());
@@ -123,20 +122,32 @@ export const scrapClassicValuer = (method, browser, page, make, model, transmiss
             console.log("⚠️ First API response did not arrive in time.");
         }
         console.log(`📄 Maximum pages to scrape: ${maxPages || "unknown"}`);
-        // --- Pagination loop (wait for API instead of fixed timeout) ---
+        // --- Pagination loop ---
         while (currentPage < maxPages) {
-            const nextBtn = yield page.$(NEXT_BUTTON_SELECTOR);
-            if (!nextBtn) {
-                console.log(`✅ No more Next button after page ${currentPage}.`);
-                break;
-            }
             try {
+                // Scroll the main container into view before clicking
+                const container = yield page.$("#comp-le47op7r");
+                if (container) {
+                    yield container.scrollIntoViewIfNeeded();
+                    // Small wait after scrolling to ensure DOM updates
+                    yield new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                // Wait for Next button to be visible and enabled
+                const nextBtn = yield page.waitForSelector(NEXT_BUTTON_SELECTOR, {
+                    visible: true,
+                    timeout: 30000
+                });
+                const isDisabled = yield nextBtn.evaluate((btn) => btn.getAttribute('aria-disabled') === 'true');
+                if (isDisabled) {
+                    console.log(`✅ Next button disabled after page ${currentPage}.`);
+                    break;
+                }
                 currentPage++;
                 console.log(`➡️ Going to page ${currentPage}...`);
-                yield nextBtn.scrollIntoViewIfNeeded();
+                // Click Next in the page context
                 yield nextBtn.click();
-                // Force wait for 30 seconds
-                yield new Promise((resolve) => setTimeout(resolve, 30000));
+                // Wait for page/API to load
+                yield new Promise(resolve => setTimeout(resolve, 30000));
                 console.log(`⏱ Waited 30 seconds for page ${currentPage}`);
             }
             catch (err) {

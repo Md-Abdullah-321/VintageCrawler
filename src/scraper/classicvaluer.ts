@@ -50,8 +50,7 @@ export const scrapClassicValuer = async (
       "GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax",
       "i"
     );
-    const NEXT_BUTTON_SELECTOR =
-      'a[data-testid="Pagination_NavButton_Next"][aria-disabled="false"]';
+    const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
     const CONTAINER_SELECTOR = "#comp-le47op7r";
 
     // --- Listen for API responses (BEFORE search) ---
@@ -114,7 +113,6 @@ export const scrapClassicValuer = async (
 
     // --- Perform search by make/model ---
     if (method === "make_model") {
-      // --- Do the search ---
       await clickElement(page, '[name="enter-a make and/or model"]');
       await wait(1500);
 
@@ -153,31 +151,47 @@ export const scrapClassicValuer = async (
 
     console.log(`📄 Maximum pages to scrape: ${maxPages || "unknown"}`);
 
-   // --- Pagination loop (wait for API instead of fixed timeout) ---
-   while (currentPage < maxPages) {
-      const nextBtn = await page.$(NEXT_BUTTON_SELECTOR);
-      if (!nextBtn) {
-        console.log(`✅ No more Next button after page ${currentPage}.`);
-        break;
-      }
-
+    // --- Pagination loop ---
+    while (currentPage < maxPages) {
       try {
+        // Scroll the main container into view before clicking
+        const container = await page.$("#comp-le47op7r");
+        if (container) {
+          await container.scrollIntoViewIfNeeded();
+          // Small wait after scrolling to ensure DOM updates
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        // Wait for Next button to be visible and enabled
+        const nextBtn = await page.waitForSelector(NEXT_BUTTON_SELECTOR, { 
+          visible: true, 
+          timeout: 30000 
+        });
+
+        const isDisabled = await nextBtn.evaluate((btn: any) => btn.getAttribute('aria-disabled') === 'true');
+        if (isDisabled) {
+          console.log(`✅ Next button disabled after page ${currentPage}.`);
+          break;
+        }
+
         currentPage++;
         console.log(`➡️ Going to page ${currentPage}...`);
 
-        await nextBtn.scrollIntoViewIfNeeded();
+        // Click Next in the page context
         await nextBtn.click();
 
-        // Force wait for 30 seconds
-        await new Promise((resolve) => setTimeout(resolve, 30000));
-        
+        // Wait for page/API to load
+        await new Promise(resolve => setTimeout(resolve, 30000));
         console.log(`⏱ Waited 30 seconds for page ${currentPage}`);
       } catch (err: any) {
         console.log(`⚠️ Pagination stopped at page ${currentPage}:`, err.message);
         break;
       }
     }
-    
+
+
+
+
     return results;
   } catch (error) {
     console.error("❌ Error scraping Classic Valuer:", error);

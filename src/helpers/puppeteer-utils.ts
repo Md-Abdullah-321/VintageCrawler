@@ -16,7 +16,7 @@ export const launchBrowser = async (headless: boolean = true): Promise<Browser> 
   try {
     console.log(`Attempting to launch browser in ${headless ? "headless" : "headful"} mode...`);
     const browser = await puppeteerExtra.launch({
-      headless: true, // always headless in VPS Docker
+      headless: headless, // always headless in VPS Docker
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
