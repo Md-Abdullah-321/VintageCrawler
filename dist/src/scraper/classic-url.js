@@ -80,7 +80,7 @@ export const scrapeClassicComWithURL = (targetUrl, page, jobId) => __awaiter(voi
             if (clicked) {
                 console.log("⏳ Waiting for next page to load...");
                 updateJob(jobId, {}, "Waiting for next page to load...");
-                yield wait(5000);
+                yield wait(10000);
                 yield page.waitForSelector(".group", { timeout: 60000 }).catch(err => {
                     console.error("❌ Failed to load next page:", err);
                     updateJob(jobId, {}, "Next page failed to load: " + err.message);
@@ -101,7 +101,7 @@ export const scrapeClassicComWithURL = (targetUrl, page, jobId) => __awaiter(voi
                 const allGroups = Array.from(document.querySelectorAll(".group"));
                 const selectedGroups = allGroups.slice(5);
                 return selectedGroups.map((group) => {
-                    var _a;
+                    var _a, _b, _c;
                     const getText = (sel) => { var _a, _b; return ((_b = (_a = group.querySelector(sel)) === null || _a === void 0 ? void 0 : _a.textContent) === null || _b === void 0 ? void 0 : _b.trim()) || null; };
                     return {
                         title: getText("h3 a"),
@@ -111,10 +111,10 @@ export const scrapeClassicComWithURL = (targetUrl, page, jobId) => __awaiter(voi
                         transmission: getText("ul li:nth-child(4) span span:nth-child(2)"),
                         gearbox: getText("ul li:nth-child(5) span span:nth-child(2)"),
                         status: getText('[data-testid="badge"]'),
-                        date: getText(".hidden.table\\:block:nth-child(2)"),
+                        date: ((_b = (_a = group.querySelectorAll(".hidden.table\\:block")[1]) === null || _a === void 0 ? void 0 : _a.textContent) === null || _b === void 0 ? void 0 : _b.trim()) || null,
                         auction: getText('a[href*="/lots/"]'),
                         price: getText('[id$="-price"] > div'),
-                        link: ((_a = group.querySelector('a[href*="/veh/"]')) === null || _a === void 0 ? void 0 : _a.getAttribute("href")) || null,
+                        link: ((_c = group.querySelector('a[href*="/veh/"]')) === null || _c === void 0 ? void 0 : _c.getAttribute("href")) || null,
                     };
                 });
             }).catch(err => {
@@ -125,6 +125,7 @@ export const scrapeClassicComWithURL = (targetUrl, page, jobId) => __awaiter(voi
             results.push(...carsData);
             console.log(`✅ Page ${i} scraped (${carsData.length} cars)`);
             updateJob(jobId, {}, `Page ${i} scraped (${carsData.length} cars)`);
+            yield wait(10000);
             if (i < totalPages) {
                 const hasNext = yield clickNextButton();
                 if (!hasNext) {

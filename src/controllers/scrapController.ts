@@ -36,7 +36,7 @@ export const startScrapingJob = async (
       });
       return;
     }
-
+    
     // Check for existing in-progress job
     let existingJob = null;
     for (const [jobId, job] of jobs.entries()) {
@@ -109,7 +109,7 @@ export const getJobLogs = async (
     if (!jobId) {
       res.status(400).json({
         status: "error",
-        message: "Job ID is required",
+        message: "Job ID is required", 
       });
       return;
     }

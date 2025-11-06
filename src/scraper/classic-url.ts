@@ -101,7 +101,7 @@ export const scrapeClassicComWithURL = async (
       if (clicked) {
         console.log("⏳ Waiting for next page to load...");
         updateJob(jobId, {}, "Waiting for next page to load...");
-        await wait(5000);
+        await wait(10000); 
         await page.waitForSelector(".group", { timeout: 60000 }).catch(err => {
           console.error("❌ Failed to load next page:", err);
           updateJob(jobId, {}, "Next page failed to load: " + err.message);
@@ -135,7 +135,7 @@ export const scrapeClassicComWithURL = async (
             transmission: getText("ul li:nth-child(4) span span:nth-child(2)"),
             gearbox: getText("ul li:nth-child(5) span span:nth-child(2)"),
             status: getText('[data-testid="badge"]'),
-            date: getText(".hidden.table\\:block:nth-child(2)"),
+            date: group.querySelectorAll(".hidden.table\\:block")[1]?.textContent?.trim() || null,
             auction: getText('a[href*="/lots/"]'),
             price: getText('[id$="-price"] > div'),
             link: group.querySelector('a[href*="/veh/"]')?.getAttribute("href") || null,
@@ -151,6 +151,7 @@ export const scrapeClassicComWithURL = async (
       console.log(`✅ Page ${i} scraped (${carsData.length} cars)`);
       updateJob(jobId, {}, `Page ${i} scraped (${carsData.length} cars)`);
 
+      await wait(10000);
       if (i < totalPages) {
         const hasNext = await clickNextButton();
         if (!hasNext) {
