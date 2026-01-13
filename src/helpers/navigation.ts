@@ -13,7 +13,7 @@ import type { Page } from "puppeteer";
 export const gotoPage = async (
   page: Page,
   url: string,
-  timeout: number = 30000
+  timeout: number = 60000
 ) => {
   try {
     await page.goto(url, { waitUntil: "networkidle2", timeout });
@@ -73,7 +73,7 @@ export const scrollToBottom = async (
 export const clickElement = async (
   page: Page,
   selector: string,
-  timeout = 5000
+  timeout = 10000
 ): Promise<void> => {
   try {
     await page.waitForSelector(selector, { timeout });
@@ -91,7 +91,7 @@ export const typeLikeHuman = async (
   delay = 100
 ): Promise<void> => {
   try {
-    await page.waitForSelector(selector, { timeout: 5000 });
+    await page.waitForSelector(selector, { timeout: 10000 });
 
     const inputElement = await page.$(selector);
     if (!inputElement) throw new Error(`Input field not found: ${selector}`);

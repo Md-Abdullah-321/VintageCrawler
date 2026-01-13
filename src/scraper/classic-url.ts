@@ -101,7 +101,7 @@ export const scrapeClassicComWithURL = async (
       if (clicked) {
         console.log("⏳ Waiting for next page to load...");
         updateJob(jobId, {}, "Waiting for next page to load...");
-        await wait(10000); 
+        await wait(10000);
         await page.waitForSelector(".group", { timeout: 60000 }).catch(err => {
           console.error("❌ Failed to load next page:", err);
           updateJob(jobId, {}, "Next page failed to load: " + err.message);
@@ -175,7 +175,7 @@ export const scrapeClassicComWithURL = async (
       try {
         const detailUrl = `https://www.classic.com${car.link}`;
         console.log(`Navigating to ${detailUrl}`);
-        await page.goto(detailUrl, { waitUntil: "networkidle2", timeout: 30000 }).catch(err => {
+        await page.goto(detailUrl, { waitUntil: "networkidle2", timeout: 60000 }).catch(err => {
           console.error(`❌ Failed to navigate to ${detailUrl}:`, err);
           updateJob(jobId, {}, `Failed to navigate to ${detailUrl}: ${err.message}`);
           throw new Error(`Failed to navigate to ${detailUrl}: ${err.message}`);

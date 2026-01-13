@@ -16,7 +16,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 /**
  * Navigate to a URL with optional timeout and retry logic
  */
-export const gotoPage = (page_1, url_1, ...args_1) => __awaiter(void 0, [page_1, url_1, ...args_1], void 0, function* (page, url, timeout = 30000) {
+export const gotoPage = (page_1, url_1, ...args_1) => __awaiter(void 0, [page_1, url_1, ...args_1], void 0, function* (page, url, timeout = 60000) {
     try {
         yield page.goto(url, { waitUntil: "networkidle2", timeout });
     }
@@ -58,7 +58,7 @@ export const scrollToBottom = (page_1, ...args_1) => __awaiter(void 0, [page_1, 
         });
     }), step, delay);
 });
-export const clickElement = (page_1, selector_1, ...args_1) => __awaiter(void 0, [page_1, selector_1, ...args_1], void 0, function* (page, selector, timeout = 5000) {
+export const clickElement = (page_1, selector_1, ...args_1) => __awaiter(void 0, [page_1, selector_1, ...args_1], void 0, function* (page, selector, timeout = 10000) {
     try {
         yield page.waitForSelector(selector, { timeout });
         yield page.click(selector);
@@ -70,7 +70,7 @@ export const clickElement = (page_1, selector_1, ...args_1) => __awaiter(void 0,
 });
 export const typeLikeHuman = (page_1, selector_1, text_1, ...args_1) => __awaiter(void 0, [page_1, selector_1, text_1, ...args_1], void 0, function* (page, selector, text, delay = 100) {
     try {
-        yield page.waitForSelector(selector, { timeout: 5000 });
+        yield page.waitForSelector(selector, { timeout: 10000 });
         const inputElement = yield page.$(selector);
         if (!inputElement)
             throw new Error(`Input field not found: ${selector}`);

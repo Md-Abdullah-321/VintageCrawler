@@ -16,6 +16,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { clickElement, gotoPage, typeLikeHuman, } from "../helpers/navigation.js";
 import dotenv from "dotenv";
 import { wait } from "../helpers/utils.js";
+import { updateJob } from "../Services/scrap.service.js";
 dotenv.config();
 /* ------------------------ Helpers (Node context) ------------------------ */
 const parsePriceNumber = (priceString) => {
@@ -99,8 +100,10 @@ const transformClassicItem = (raw) => {
     };
 };
 /* ---------------------------- Main Scraper ----------------------------- */
-export const scrapClassicCom = (browser, page, make, model, transmission) => __awaiter(void 0, void 0, void 0, function* () {
+export const scrapClassicCom = (browser, page, make, model, transmission, jobId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        if (jobId)
+            updateJob(jobId, {}, "Navigating to Classic.com");
         // Navigate to Classic.com
         yield gotoPage(page, process.env.CLASSIC_COM_BASE_URL, 60000);
         console.log("📄 Page loaded:", yield page.title());
@@ -120,6 +123,8 @@ export const scrapClassicCom = (browser, page, make, model, transmission) => __a
             return [];
         }
         const maxPages = Math.ceil(parseInt(totalResultsText, 10) / 24);
+        if (jobId)
+            updateJob(jobId, {}, `Classic.com pages: ${maxPages}`);
         let currentPage = 1;
         let results = [];
         while (currentPage <= maxPages) {
@@ -129,6 +134,8 @@ export const scrapClassicCom = (browser, page, make, model, transmission) => __a
             const pageItems = yield extractAndTransformCarsFromPage(page);
             results = results.concat(pageItems);
             console.log(`✅ Page ${currentPage}/${maxPages} scraped, found ${pageItems.length} cars.`);
+            if (jobId)
+                updateJob(jobId, {}, `Page ${currentPage}/${maxPages} scraped (${pageItems.length} cars)`);
             const nextClicked = yield clickNextButton(page);
             if (!nextClicked)
                 break;

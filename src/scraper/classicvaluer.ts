@@ -9,49 +9,148 @@ import { EventEmitter } from "events";
 import {
   clickElement,
   gotoPage,
-  typeLikeHuman,
+  typeLikeHuman
 } from "../helpers/navigation.js";
 
 // Dependencies
 import dotenv from "dotenv";
 import re from "re2";
 import { wait } from "../helpers/utils.js";
+import { updateJob } from "../Services/scrap.service.js";
 dotenv.config();
+
+type ClassicValuerRecord = Record<string, any> & {
+  sourceUrl?: string;
+  status?: string;
+};
+
+const API_REGEX = new re(
+  "GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax",
+  "i"
+);
+const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
+const CONTAINER_SELECTOR = "#comp-le47op7r";
+
+const deriveStatus = (priceStr: string | undefined) => {
+  const normalized = (priceStr || "").toLowerCase();
+  if (!normalized.trim()) return "Not Sold";
+  return normalized.includes("not sold") ? "Not Sold" : "Sold";
+};
+
+const waitForEvent = (emitter: EventEmitter, event: string, timeout: number) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Timeout")), timeout);
+    emitter.once(event, () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+
+const parseApiPayload = (
+  data: any,
+  seenPayloadSignatures: Set<string>
+): ClassicValuerRecord[] => {
+  let records: any[] = [];
+
+  if (typeof data === "object" && !Array.isArray(data)) {
+    const count = data?.result?.count;
+    if (count) {
+      // track via outer scope where needed
+    }
+    records = data?.result?.records || data?.items || [];
+  } else if (Array.isArray(data)) {
+    records = data;
+  }
+
+  const sig = JSON.stringify(records).slice(0, 500);
+  if (seenPayloadSignatures.has(sig)) return [];
+  seenPayloadSignatures.add(sig);
+
+  return records
+    .filter((rec) => typeof rec === "object")
+    .map((rec) => ({
+      ...rec,
+      sourceUrl: process.env.CLASSIC_VALUER_BASE_URL,
+      status: deriveStatus(rec.price_usd_string),
+    }));
+};
+
+const safeParseJson = async (response: any) => {
+  try {
+    const text = await response.text();
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("Error parsing response JSON:", err);
+    return null;
+  }
+};
+
+const waitForContainer = async (page: any) => {
+  try {
+    const container = await page.waitForSelector(CONTAINER_SELECTOR, {
+      timeout: 10000,
+    });
+    await container.scrollIntoViewIfNeeded();
+    return true;
+  } catch {
+    console.log(`⚠️ Container ${CONTAINER_SELECTOR} not found.`);
+    return false;
+  }
+};
 
 export const scrapClassicValuer = async (
   method: string,
-  browser: any,
   page: any,
   make: string,
   model: string,
   transmission: string,
-  url: string
+  url: string,
+  jobId: string,
+  job_progress_point: number,
+  prev_job_progress_point: number
 ) => {
   try {
+    const triggerSearch = async () => {
+      if (method !== "make_model") return;
+      await clickElement(page, '#input_comp-m30drsaf');
+      await wait(1500);
+
+      await typeLikeHuman(
+        page,
+        '#input_comp-m30drsaf',
+        `${make} ${model} ${transmission}`.trim()
+      );
+
+      await wait(1500);
+      await page.keyboard.press("Enter");
+      await wait(5000);
+    };
+
     // Navigate to Classic Valuer
     if (method === "make_model") {
       await gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL || "");
+      await wait(5000);
+      updateJob(jobId, {}, `Navigated to Classic Valuer homepage`);
     } else if (method === "url") {
-      await gotoPage(page, url); 
+      await gotoPage(page, url);
+      await wait(5000);
+      updateJob(jobId, {}, `Navigated to ${url}`);
     }
+
+    // --- Perform search by make/model ---
 
     console.log("📄 Page loaded:", await page.title());
 
     // --- Scraping setup ---
-    let results: any[] = [];
-    let seenPayloadSignatures = new Set();
+    let results: ClassicValuerRecord[] = [];
+    let seenPayloadSignatures = new Set<string>();
     let maxPages = 0;
     let currentPage = 1;
+    let firstApiReceived = false;
+    let lastSeenPageEvent = 0;
 
     const firstApiEvent = new EventEmitter();
     const pageApiEvent = new EventEmitter();
-
-    const API_REGEX = new re(
-      "GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax",
-      "i"
-    );
-    const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
-    const CONTAINER_SELECTOR = "#comp-le47op7r";
 
     // --- Listen for API responses (BEFORE search) ---
     page.on("response", async (response: any) => {
@@ -69,90 +168,71 @@ export const scrapClassicValuer = async (
 
         if (response.status() !== 200) return;
 
-        const data = await response.json();
-        let records: any[] = [];
-
+        const data = await safeParseJson(response);
+        if (!data) return;
         if (typeof data === "object" && !Array.isArray(data)) {
           const count = data?.result?.count;
           if (count) maxPages = Math.ceil(count / 12);
-          records = data?.result?.records || data?.items || [];
-        } else if (Array.isArray(data)) {
-          records = data;
         }
 
-        // Deduplicate
-        const sig = JSON.stringify(records).slice(0, 500);
-        if (!seenPayloadSignatures.has(sig)) {
-          seenPayloadSignatures.add(sig);
-          for (const rec of records) {
-            if (typeof rec === "object") {
-              rec.sourceUrl = process.env.CLASSIC_VALUER_BASE_URL;
-
-              // ✅ Add status based on price_usd_string
-              const priceStr = rec.price_usd_string || "";
-              rec.status =
-                priceStr.toLowerCase().includes("not sold") ||
-                priceStr.trim() === ""
-                  ? "Not Sold"
-                  : "Sold";
-
-              results.push(rec);
-            }
-          }
-        }
+        const parsedRecords = parseApiPayload(data, seenPayloadSignatures);
+        results.push(...parsedRecords);
 
         // Signal events
+        firstApiReceived = true;
         firstApiEvent.emit("first"); // only first matters once
+        lastSeenPageEvent = currentPage;
         pageApiEvent.emit("page", currentPage);
 
-        console.log(`✅ Captured ${records.length} records from API.`);
+        console.log(`✅ Captured ${parsedRecords.length} records from API.`);
       } catch (err) {
         console.error("Error parsing API response:", err);
       }
     });
 
     // --- Perform search by make/model ---
-    if (method === "make_model") {
-      await clickElement(page, '[name="enter-a make and/or model"]');
-      await wait(1500);
+    await triggerSearch();
 
-      await typeLikeHuman(
-        page,
-        '[placeholder="Enter a make and/or model"]',
-        `${make} ${model} ${transmission}`.trim()
-      );
-
-      await wait(1500);
-      await page.keyboard.press("Enter");
-    }
 
     // --- Wait for container ---
-    try {
-      const container = await page.waitForSelector(CONTAINER_SELECTOR, {
-        timeout: 10000,
-      });
-      await container.scrollIntoViewIfNeeded();
-    } catch {
-      console.log(`⚠️ Container ${CONTAINER_SELECTOR} not found.`);
-      return [];
-    }
+    const hasContainer = await waitForContainer(page);
+    if (!hasContainer) return [];
 
-    // --- Wait for first API response (so first page is captured) ---
-    try {
-      await Promise.race([
-        new Promise((resolve) => firstApiEvent.once("first", resolve)),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout waiting for API")), 60000)
-        ),
-      ]);
-    } catch {
-      console.log("⚠️ First API response did not arrive in time.");
-    }
+    // --- Wait for first API response (retry with reload/search if missing) ---
+    const ensureFirstApi = async () => {
+      const maxAttempts = 3;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          if (firstApiReceived) return;
+          await Promise.race([waitForEvent(firstApiEvent, "first", 60000)]);
+          return;
+        } catch {
+          console.log(`⚠️ First API response attempt ${attempt} timed out.`);
+          if (attempt === maxAttempts) break;
+          console.log("🔄 Reloading page to retry API capture...");
+          await page.reload({ waitUntil: "networkidle2" });
+          await wait(3000);
+          await triggerSearch();
+          const containerReady = await waitForContainer(page);
+          if (!containerReady) {
+            console.log("⚠️ Container missing after reload; skipping further retries.");
+            break;
+          }
+        }
+      }
+    };
+
+    await ensureFirstApi();
 
     console.log(`📄 Maximum pages to scrape: ${maxPages || "unknown"}`);
 
+    const pagesToScrape = Math.max(1, maxPages || 1);
+    const statusPerPage = pagesToScrape
+      ? Math.floor(job_progress_point / pagesToScrape)
+      : 0;
+
     // --- Pagination loop ---
-    while (currentPage < maxPages) {
+    while (currentPage < pagesToScrape) {
       try {
         // Scroll the main container into view before clicking
         const container = await page.$("#comp-le47op7r");
@@ -163,9 +243,9 @@ export const scrapClassicValuer = async (
         }
 
         // Wait for Next button to be visible and enabled
-        const nextBtn = await page.waitForSelector(NEXT_BUTTON_SELECTOR, { 
-          visible: true, 
-          timeout: 30000 
+        const nextBtn = await page.waitForSelector(NEXT_BUTTON_SELECTOR, {
+          visible: true,
+          timeout: 30000
         });
 
         const isDisabled = await nextBtn.evaluate((btn: any) => btn.getAttribute('aria-disabled') === 'true');
@@ -183,15 +263,40 @@ export const scrapClassicValuer = async (
         // Wait for page/API to load
         await new Promise(resolve => setTimeout(resolve, 30000));
         console.log(`⏱ Waited 30 seconds for page ${currentPage}`);
+
+        const progressDelta = Math.min(
+          job_progress_point,
+          statusPerPage * (currentPage - 1)
+        );
+        updateJob(
+          jobId,
+          { progress: prev_job_progress_point + progressDelta },
+          `Scraping page ${currentPage} of ${maxPages}`
+        );
       } catch (err: any) {
         console.log(`⚠️ Pagination stopped at page ${currentPage}:`, err.message);
+        updateJob(
+          jobId,
+          {},
+          `Pagination stopped at page ${currentPage}: ${err.message}`
+        );
         break;
       }
     }
 
+    // --- Wait for last API response (so last page is captured) ---
+    if (lastSeenPageEvent < currentPage) {
+      try {
+        await Promise.race([waitForEvent(pageApiEvent, "page", 60000)]);
+      } catch {
+        console.log("⚠️ Last API response did not arrive in time.");
+      }
+    }
 
+    // Capture title before closing the page to avoid detached frame errors
+    const pageTitle = await page.title();
 
-
+    console.log(`✅ Scraping completed for ${pageTitle}. Total records: ${results.length}`);
     return results;
   } catch (error) {
     console.error("❌ Error scraping Classic Valuer:", error);

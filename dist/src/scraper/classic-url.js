@@ -147,7 +147,7 @@ export const scrapeClassicComWithURL = (targetUrl, page, jobId) => __awaiter(voi
             try {
                 const detailUrl = `https://www.classic.com${car.link}`;
                 console.log(`Navigating to ${detailUrl}`);
-                yield page.goto(detailUrl, { waitUntil: "networkidle2", timeout: 30000 }).catch(err => {
+                yield page.goto(detailUrl, { waitUntil: "networkidle2", timeout: 60000 }).catch(err => {
                     console.error(`❌ Failed to navigate to ${detailUrl}:`, err);
                     updateJob(jobId, {}, `Failed to navigate to ${detailUrl}: ${err.message}`);
                     throw new Error(`Failed to navigate to ${detailUrl}: ${err.message}`);

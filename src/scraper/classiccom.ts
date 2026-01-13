@@ -13,6 +13,7 @@ import {
 
 import dotenv from "dotenv";
 import { wait } from "../helpers/utils.js";
+import { updateJob } from "../Services/scrap.service.js";
 dotenv.config();
 
 /* ------------------------ Helpers (Node context) ------------------------ */
@@ -133,9 +134,11 @@ export const scrapClassicCom = async (
   page: any,
   make: string,
   model: string,
-  transmission: string
+  transmission: string,
+  jobId?: string
 ) => {
   try {
+    if (jobId) updateJob(jobId, {}, "Navigating to Classic.com");
     // Navigate to Classic.com
     await gotoPage(page, process.env.CLASSIC_COM_BASE_URL!, 60000);
     console.log("📄 Page loaded:", await page.title());
@@ -168,6 +171,7 @@ export const scrapClassicCom = async (
     }
 
     const maxPages = Math.ceil(parseInt(totalResultsText, 10) / 24);
+    if (jobId) updateJob(jobId, {}, `Classic.com pages: ${maxPages}`);
     let currentPage = 1;
     let results: any[] = [];
 
@@ -186,6 +190,7 @@ export const scrapClassicCom = async (
       console.log(
         `✅ Page ${currentPage}/${maxPages} scraped, found ${pageItems.length} cars.`
       );
+      if (jobId) updateJob(jobId, {}, `Page ${currentPage}/${maxPages} scraped (${pageItems.length} cars)`);
 
       const nextClicked = await clickNextButton(page);
       if (!nextClicked) break;

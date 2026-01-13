@@ -9,10 +9,11 @@ import type { Browser, Page } from "puppeteer";
 import puppeteer from "puppeteer";
 import puppeteerExtra from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import { wait } from "./utils.js";
 
 puppeteerExtra.use(StealthPlugin());
 
-export const launchBrowser = async (headless: boolean = true): Promise<Browser> => {
+export const launchBrowser = async (headless: boolean): Promise<Browser> => {
   try {
     console.log(`Attempting to launch browser in ${headless ? "headless" : "headful"} mode...`);
     const browser = await puppeteerExtra.launch({
@@ -29,7 +30,7 @@ export const launchBrowser = async (headless: boolean = true): Promise<Browser> 
         "--window-size=1920,1080",
       ],
       defaultViewport: { width: 1920, height: 1080 },
-      timeout: 0, 
+      timeout: 0,
       executablePath: puppeteer.executablePath(),
     });
 
@@ -65,5 +66,36 @@ export const closeBrowser = async (browser: Browser) => {
     }
   } catch (error: any) {
     console.error("❌ Failed to close browser:", error.message, error.stack);
+  }
+};
+
+export const closePage = async (page: Page | null) => {
+  try {
+    if (page && !page.isClosed()) {
+      await page.close({ runBeforeUnload: true });
+      console.log("Page closed successfully.");
+    }
+  } catch (err: any) {
+    console.warn("⚠️ Page close failed:", err.message);
+  }
+};
+
+// Safe close function to close page and browser
+export const safeClose = async (page: Page | null, browser: Browser | null) => {
+  try {
+    if (page) {
+      await page.close({ runBeforeUnload: true });
+      console.log("Page closed successfully.");
+    }
+  } catch (err: any) {
+    console.warn("⚠️ Page close failed:", err.message);
+  }
+  try {
+    if (browser) {
+      await wait(500).then(() => browser.close());
+      console.log("Browser closed successfully.");
+    }
+  } catch (err: any) {
+    console.warn("⚠️ Browser close failed:", err.message);
   }
 };

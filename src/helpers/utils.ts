@@ -62,3 +62,11 @@ export const retryOperation = async <T>(
   }
   throw new Error("Retry operation failed");
 };
+
+
+export const getDateStr = () => {
+  const d = new Date();
+  return `${String(d.getMonth() + 1).padStart(2, "0")}_${String(
+    d.getDate()
+  ).padStart(2, "0")}_${String(d.getFullYear()).slice(-2)}`;
+};

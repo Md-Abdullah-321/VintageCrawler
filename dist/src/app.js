@@ -35,7 +35,7 @@ app.use("/output", express.static(outputPath));
 app.get("/download/:filename", (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(outputPath, filename);
-    console.log("Downloading file:", filePath); // debug log
+    console.log("Downloading file:", filePath);
     res.download(filePath, filename, (err) => {
         if (err) {
             console.error("Download error:", err);

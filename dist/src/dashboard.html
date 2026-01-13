@@ -5,56 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Classic Car Scraper Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#007BFF', // Vibrant blue for modern car industry feel
+              secondary: '#6C757D', // Neutral gray for buttons
+              accent: '#28A745', // Green for success/positive vibe
+            },
+            fontFamily: {
+              sans: ['"Helvetica Neue"', 'Arial', 'sans-serif'], // Clean, industry-standard font
+            },
+            animation: {
+              fadeIn: 'fadeIn 1s ease-in-out',
+              slideUp: 'slideUp 0.5s ease-out',
+              hoverLift: 'hoverLift 0.3s ease-in-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              hoverLift: {
+                '0%': { transform: 'translateY(0)' },
+                '100%': { transform: 'translateY(-5px)' },
+              },
+            },
+          },
+        },
+      };
+    </script>
   </head>
-  <body class="bg-gray-50 min-h-screen font-sans text-gray-900">
-    <div class="container mx-auto px-4 py-10">
+  <body class="min-h-screen font-sans text-gray-900 antialiased bg-gray-100">
+    <div class="container mx-auto px-4 py-12">
       <!-- Dashboard Header -->
-      <header class="mb-12 text-center">
-        <h1 class="text-4xl font-bold leading-tight">
+      <header class="mb-12 text-center animate-fadeIn">
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-sm border border-gray-200 text-gray-700 text-sm font-semibold uppercase tracking-wide">
+          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          VintageCrawler
+        </div>
+        <h1 class="text-4xl font-extrabold leading-tight text-gray-900 mt-3">
           Classic Car Scraper Dashboard
         </h1>
-        <p class="text-gray-600 mt-2 text-lg">
-          Start scraping classic car listings and download CSVs easily
+        <p class="text-gray-600 mt-3 text-lg">
+          Light, simple, and focused on the data you need.
         </p>
       </header>
 
       <!-- Start Scraping Form -->
       <section
-        class="bg-white shadow-lg rounded-2xl p-6 md:p-8 mb-12 max-w-4xl mx-auto"
+        class="bg-white shadow-xl rounded-3xl p-8 mb-12 max-w-4xl mx-auto ring-1 ring-gray-200 animate-slideUp transition-all hover:shadow-2xl"
       >
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">
           Start New Scraping Job
         </h2>
 
         <form
           id="scrape-form"
-          class="space-y-6"
+          class="space-y-8"
           aria-label="Start scraping job form"
         >
           <!-- Scraping Method Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-semibold text-gray-700 mb-3">
               Scraping Method
             </label>
-            <div class="flex space-x-4">
-              <label class="inline-flex items-center">
+            <div class="flex flex-wrap gap-6">
+              <label class="inline-flex items-center cursor-pointer group">
                 <input
                   type="radio"
                   name="scrape_method"
                   value="make_model"
                   checked
-                  class="form-radio h-5 w-5 text-blue-600 focus:ring-blue-500"
+                  class="form-radio h-5 w-5 text-primary focus:ring-primary transition-colors"
                 />
-                <span class="ml-2 text-gray-700">Make and Model</span>
+                <span class="ml-2 text-gray-700 font-medium group-hover:text-primary transition-colors">Make and Model</span>
               </label>
-              <label class="inline-flex items-center">
+              <label class="inline-flex items-center cursor-pointer group">
                 <input
                   type="radio"
                   name="scrape_method"
                   value="url"
-                  class="form-radio h-5 w-5 text-blue-600 focus:ring-blue-500"
+                  class="form-radio h-5 w-5 text-primary focus:ring-primary transition-colors"
                 />
-                <span class="ml-2 text-gray-700">URL</span>
+                <span class="ml-2 text-gray-700 font-medium group-hover:text-primary transition-colors">URL</span>
+              </label>
+              <label class="inline-flex items-center cursor-pointer group">
+                <input
+                  type="radio"
+                  name="scrape_method"
+                  value="bulk_excel"
+                  class="form-radio h-5 w-5 text-primary focus:ring-primary transition-colors"
+                />
+                <span class="ml-2 text-gray-700 font-medium group-hover:text-primary transition-colors">Bulk via Excel</span>
               </label>
             </div>
           </div>
@@ -65,34 +113,34 @@
             class="grid grid-cols-1 sm:grid-cols-2 gap-6"
           >
             <div>
-              <label for="car_make" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="car_make" class="block text-sm font-semibold text-gray-700 mb-2">
                 Car Make
               </label>
               <input
                 type="text"
                 id="car_make"
                 placeholder="e.g., Ford"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-shadow shadow-sm hover:shadow-md"
               />
             </div>
             <div>
-              <label for="car_model" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="car_model" class="block text-sm font-semibold text-gray-700 mb-2">
                 Car Model
               </label>
               <input
                 type="text"
                 id="car_model"
                 placeholder="e.g., Mustang"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-shadow shadow-sm hover:shadow-md"
               />
             </div>
             <div>
-              <label for="transmission" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="transmission" class="block text-sm font-semibold text-gray-700 mb-2">
                 Transmission
               </label>
               <select
                 id="transmission"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-shadow shadow-sm hover:shadow-md"
               >
                 <option value="">Select Transmission</option>
                 <option value="Manual">Manual</option>
@@ -100,12 +148,12 @@
               </select>
             </div>
             <div>
-              <label for="site" class="block text-sm font-medium text-gray-700 mb-2">
+              <label for="site" class="block text-sm font-semibold text-gray-700 mb-2">
                 Select Site
               </label>
               <select
                 id="site"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-shadow shadow-sm hover:shadow-md"
               >
                 <option value="">Select Site</option>
                 <option value="theclassicvaluer.com">The Classic Valuer</option>
@@ -117,43 +165,61 @@
 
           <!-- URL Field -->
           <div id="url-field" class="hidden">
-            <label for="scrape_url" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="scrape_url" class="block text-sm font-semibold text-gray-700 mb-2">
               URL
             </label>
             <input
               type="url"
               id="scrape_url"
               placeholder="e.g., https://example.com/car-listing"
-              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-shadow shadow-sm hover:shadow-md"
             />
+          </div>
+
+          <!-- Bulk Excel Fields -->
+          <div id="bulk-fields" class="hidden">
+            <div>
+              <label for="excel_file" class="block text-sm font-semibold text-gray-700 mb-2">
+                Upload Excel File
+              </label>
+              <input
+                type="file"
+                id="excel_file"
+                accept=".xlsx,.xls"
+                class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-shadow shadow-sm hover:shadow-md"
+              />
+              <p class="mt-2 text-sm text-gray-500">
+                The Excel file should have columns: 1. Car, 2. Brand, 3. Era, 4. Notes / Why It’s Useful, 5. URLs. The site will be inferred from the URLs provided.
+              </p>
+            </div>
           </div>
 
           <div
             id="options-section"
             class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
-            <label id="keep-duplicates-label" class="inline-flex items-center" for="keep_duplicates">
+            <label id="keep-duplicates-label" class="inline-flex items-center cursor-pointer group" for="keep_duplicates">
               <input
                 type="checkbox"
                 id="keep_duplicates"
-                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400"
+                class="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary transition-colors"
               />
-              <span class="ml-2 text-gray-700 font-medium">Keep Duplicates</span>
+              <span class="ml-2 text-gray-700 font-medium group-hover:text-primary transition-colors">Keep Duplicates</span>
             </label>
-            <label class="inline-flex items-center" for="debug_mode">
+            <label class="inline-flex items-center cursor-pointer group" for="debug_mode">
               <input
                 type="checkbox"
                 id="debug_mode"
-                class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-400"
+                class="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary transition-colors"
               />
-              <span class="ml-2 text-gray-700 font-medium">Debug Mode</span>
+              <span class="ml-2 text-gray-700 font-medium group-hover:text-primary transition-colors">Debug Mode</span>
             </label>
           </div>
 
           <div class="text-center">
             <button
               type="submit"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 w-full sm:w-auto"
+              class="bg-primary hover:bg-blue-600 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition-all hover:animate-hoverLift focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full sm:w-auto"
             >
               Start Scraping
             </button>
@@ -162,35 +228,23 @@
       </section>
 
       <!-- Scraping Jobs -->
-      <section class="mb-12 max-w-4xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-          <h2 class="text-2xl font-semibold text-gray-800">Scraping Jobs</h2>
-          <div class="flex gap-3">
-            <button id="refresh-jobs" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm">
+      <section class="mb-12 max-w-4xl mx-auto animate-slideUp" style="animation-delay: 0.2s;">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+          <h2 class="text-3xl font-bold text-gray-900">Scraping Jobs</h2>
+          <div class="flex gap-4">
+            <button id="refresh-jobs" class="bg-secondary hover:bg-gray-600 text-white px-6 py-2.5 rounded-xl shadow-sm transition-all hover:animate-hoverLift">
               Refresh
             </button>
-            <button id="clear-storage" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl shadow-sm">
+            <button id="clear-storage" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl shadow-sm transition-all hover:animate-hoverLift">
               Clear Storage
             </button>
           </div>
         </div>
-        <div id="job-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
-          <p class="text-center text-gray-600">No scraping jobs yet.</p>
+        <div id="job-list" class="bg-white shadow-xl rounded-3xl p-8 space-y-6 ring-1 ring-gray-200 transition-all hover:shadow-2xl">
+          <p class="text-center text-gray-500">No scraping jobs yet.</p>
         </div>
       </section>
 
-      <!-- Available CSVs -->
-      <section class="mb-12 max-w-4xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-          <h2 class="text-2xl font-semibold text-gray-800">Available CSVs</h2>
-          <button id="refresh-csvs" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-xl shadow-sm">
-            Refresh
-          </button>
-        </div>
-        <ul id="csv-list" class="bg-white shadow-md rounded-2xl p-8 space-y-4">
-          <li class="text-center text-gray-500">No CSVs available yet.</li>
-        </ul>
-      </section>
     </div>
 
     <script>
@@ -200,71 +254,114 @@
         const modelInput = document.getElementById("car_model");
         const siteSelect = document.getElementById("site");
         const urlInput = document.getElementById("scrape_url");
+        const excelInput = document.getElementById("excel_file");
         const makeModelFields = document.getElementById("make-model-fields");
         const urlField = document.getElementById("url-field");
+        const bulkFields = document.getElementById("bulk-fields");
         const keepDuplicatesLabel = document.getElementById("keep-duplicates-label");
         const scrapeMethodRadios = document.querySelectorAll("input[name='scrape_method']");
         const jobList = document.getElementById("job-list");
         let currentJobId = null;
-        let lastFileCount = 0;
 
         function toggleFormFields() {
           const method = document.querySelector("input[name='scrape_method']:checked").value;
-          if (method === "url") {
-            makeModelFields.classList.add("hidden");
-            urlField.classList.remove("hidden");
-            keepDuplicatesLabel.classList.add("hidden");
-          } else {
+          makeModelFields.classList.add("hidden");
+          urlField.classList.add("hidden");
+          bulkFields.classList.add("hidden");
+          keepDuplicatesLabel.classList.add("hidden");
+
+          if (method === "make_model") {
             makeModelFields.classList.remove("hidden");
-            urlField.classList.add("hidden");
+            keepDuplicatesLabel.classList.remove("hidden");
+          } else if (method === "url") {
+            urlField.classList.remove("hidden");
+          } else if (method === "bulk_excel") {
+            bulkFields.classList.remove("hidden");
             keepDuplicatesLabel.classList.remove("hidden");
           }
         }
         toggleFormFields();
         scrapeMethodRadios.forEach(r => r.addEventListener("change", toggleFormFields));
 
-        const loadJobs = () => {
-          const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
-          renderJobs(jobs);
-        };
-
-        const saveJob = (job) => {
-          const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
-          jobs.push(job);
-          localStorage.setItem("scrapingJobs", JSON.stringify(jobs));
-          renderJobs(jobs);
+        const loadJobs = async () => {
+          try {
+            const res = await fetch("/api/v1/jobs");
+            if (!res.ok) throw new Error("Failed to load jobs");
+            const data = await res.json();
+            const jobs = (data && data.payload) || [];
+            renderJobs(jobs);
+          } catch (err) {
+            console.error("Failed to load jobs:", err);
+            renderJobs([]);
+          }
         };
 
         const renderJobs = (jobs) => {
           jobs.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
           jobList.innerHTML = jobs.length
             ? jobs.map(job => `
-              <div class="flex flex-col p-4 border border-gray-200 rounded-lg">
-                <div class="flex justify-between">
-                  <span>${job.url || `${job.make} ${job.model}`}</span>
-                  <span>${new Date(job.startedAt).toLocaleString()}</span>
+              <div class="flex flex-col p-6 border border-gray-200 rounded-2xl bg-gray-50 transition-all hover:shadow-md hover:animate-hoverLift">
+                <div class="flex justify-between items-start gap-4 flex-wrap">
+                  <div class="flex flex-col gap-1">
+                    <span class="font-semibold text-gray-800 break-words">${job.url || job.excel_file?.name || `${job.make || ""} ${job.model || ""}`.trim() || "Job"}</span>
+                    <div class="text-xs text-gray-500 flex flex-wrap gap-3">
+                      <span class="px-2 py-1 rounded-full bg-gray-200 text-gray-700 font-semibold">${(job.method || "unknown").toUpperCase()}</span>
+                      ${job.site ? `<span class="px-2 py-1 rounded-full bg-blue-100 text-blue-700">${job.site}</span>` : ""}
+                      ${job.fileName ? `<span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">${job.fileName}</span>` : ""}
+                    </div>
+                    <div class="text-xs text-gray-500 flex flex-wrap gap-3">
+                      <span>Started: ${job.startedAt ? new Date(job.startedAt).toLocaleString() : "N/A"}</span>
+                      ${job.url ? `<a href="${job.url}" target="_blank" rel="noopener noreferrer" class="truncate max-w-xs" title="${job.url}">URL: ${job.url}</a>` : ""}
+                      ${job.make || job.model ? `<span>Query: ${(job.make || "")} ${(job.model || "")} ${(job.transmission || "")}</span>` : ""}
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold ${job.status === "completed" ? "text-green-600" : job.status === "failed" ? "text-red-600" : "text-blue-600"}">${(job.status || "").toUpperCase()}</span>
+                    <span class="text-sm text-gray-600">${Number(job.progress || 0)}%</span>
+                  </div>
                 </div>
-                <div class="mt-2 flex justify-between items-center">
-                  <p class="text-sm text-gray-600 font-medium">${job.status.toUpperCase()} - ${job.progress}%</p>
+                <div class="mt-4 flex justify-between items-center">
+                  <p class="text-sm font-medium text-gray-600">${job.status.toUpperCase()} - ${job.progress}%</p>
+                  <span class="text-xs text-gray-500">${getCurrentStep(job)}</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
                   <div class="h-2.5 rounded-full" 
-                       style="width:${job.progress}%; background-color:${job.status === 'failed' ? '#ef4444' : '#3b82f6'}">
+                       style="width:${job.progress}%; background-color:${job.status === 'failed' ? '#ef4444' : '#007BFF'}">
                   </div>
                 </div>
-                <p class="text-sm text-gray-500 mt-1">${getStatusMessage(job)}</p>
+                <p class="text-sm text-gray-500 mt-2">${getStatusMessage(job)}</p>
+                ${job.status === "completed" && job.fileName ? `
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <a href="/download/${encodeURIComponent(job.fileName)}" class="px-4 py-2 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-600 transition-colors">Download</a>
+                    <button data-filename="${encodeURIComponent(job.fileName)}" class="job-delete-btn px-4 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600 transition-colors">Delete</button>
+                  </div>
+                ` : ""}
               </div>
             `).join("")
-            : "<p class='text-center text-gray-600'>No scraping jobs yet.</p>";
+            : "<p class='text-center text-gray-500'>No scraping jobs yet.</p>";
+        };
+
+        const getCurrentStep = (job) => {
+          const logs = Array.isArray(job.logs) ? job.logs : [];
+          if (logs.length) {
+            const last = logs[logs.length - 1];
+            const msg = typeof last === "string" ? last : last.message;
+            const ts = typeof last === "string" ? "" : last.timestamp;
+            const time = ts ? new Date(ts).toLocaleTimeString() : "";
+            return `${msg || ""}${time ? ` • ${time}` : ""}`;
+          }
+          return "";
         };
 
         const getStatusMessage = (job) => {
           switch (job.status) {
             case "in progress":
+              const currentStep = getCurrentStep(job);
+              if (currentStep) return currentStep;
               if (job.progress <= 10) return "Initializing scraping job...";
               if (job.progress <= 50) return "Navigating sites and validating results...";
               if (job.progress < 100) return "Saving results to CSV...";
-              return "Almost done...";
+              return "Working...";
             case "completed":
               return "Job completed successfully!";
             case "failed":
@@ -277,111 +374,222 @@
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
           const method = document.querySelector("input[name='scrape_method']:checked").value;
-          [makeInput, modelInput, siteSelect, urlInput].forEach(el => el.classList.remove("border-red-500"));
+          [makeInput, modelInput, siteSelect, urlInput, excelInput].forEach(el => el?.classList?.remove("border-red-500"));
           let hasError = false;
+
           if (method === "make_model") {
             if (!makeInput.value.trim()) { makeInput.classList.add("border-red-500"); hasError = true; }
             if (!modelInput.value.trim()) { modelInput.classList.add("border-red-500"); hasError = true; }
             if (!siteSelect.value.trim()) { siteSelect.classList.add("border-red-500"); hasError = true; }
-          } else {
+          } else if (method === "url") {
             if (!urlInput.value.trim()) { urlInput.classList.add("border-red-500"); hasError = true; }
+          } else if (method === "bulk_excel") {
+            if (!excelInput.files.length) { excelInput.classList.add("border-red-500"); hasError = true; }
           }
           if (hasError) return;
 
-          const payload = method === "make_model"
-            ? { method, make: makeInput.value.trim(), model: modelInput.value.trim(), transmission: document.getElementById("transmission").value, site: siteSelect.value, keep_duplicates: document.getElementById("keep_duplicates").checked, debug_mode: document.getElementById("debug_mode").checked }
-            : { method, url: urlInput.value.trim(), keep_duplicates: false, debug_mode: document.getElementById("debug_mode").checked };
-
           try {
-            alert("🚀 Starting scraping job...");
-            const res = await fetch("/api/v1/scrape", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            showToast("🚀 Starting scraping job...", "success");
+            let res;
+            if (method === "bulk_excel") {
+              const formData = new FormData();
+              formData.append("method", method);
+              formData.append("excel_file", excelInput.files[0]);
+              formData.append("keep_duplicates", document.getElementById("keep_duplicates").checked);
+              formData.append("debug_mode", document.getElementById("debug_mode").checked);
+              res = await fetch("/api/v1/scrape", { method: "POST", body: formData });
+            } else {
+              const payload = method === "make_model"
+                ? { method, make: makeInput.value.trim(), model: modelInput.value.trim(), transmission: document.getElementById("transmission").value, site: siteSelect.value, keep_duplicates: document.getElementById("keep_duplicates").checked, debug_mode: document.getElementById("debug_mode").checked }
+                : { method, url: urlInput.value.trim(), keep_duplicates: false, debug_mode: document.getElementById("debug_mode").checked };
+              res = await fetch("/api/v1/scrape", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            }
             const data = await res.json();
-            if (!res.ok) { alert(`❌ Failed: ${data.message || "Unknown error"}`); return; }
+            if (!res.ok) { showToast(`❌ Failed: ${data.message || "Unknown error"}`, "error"); return; }
             currentJobId = data.payload.jobId;
-            saveJob({ ...payload, jobId: currentJobId, status: "in progress", progress: 10, startedAt: new Date().toISOString() });
-            monitorJobProgress(currentJobId);
+            const jobDetails = method === "bulk_excel"
+              ? { method, excel_file: { name: excelInput.files[0].name }, keep_duplicates: document.getElementById("keep_duplicates").checked, debug_mode: document.getElementById("debug_mode").checked }
+              : (method === "make_model"
+                ? { method, make: makeInput.value.trim(), model: modelInput.value.trim(), transmission: document.getElementById("transmission").value, site: siteSelect.value, keep_duplicates: document.getElementById("keep_duplicates").checked, debug_mode: document.getElementById("debug_mode").checked }
+                : { method, url: urlInput.value.trim(), keep_duplicates: false, debug_mode: document.getElementById("debug_mode").checked });
+            await loadJobs();
+            // monitorJobProgress(currentJobId);
+            showToast("Job started and syncing…", "success");
           } catch (err) {
             console.error(err);
-            alert("❌ Request failed. Check console.");
+            showToast("❌ Request failed. Check console.", "error");
           }
         });
 
-        const monitorJobProgress = (jobId) => {
-          const interval = setInterval(async () => {
-            try {
-              const res = await fetch(`/api/v1/scrape/status/${jobId}`);
-              const job = await res.json();
-              const jobs = JSON.parse(localStorage.getItem("scrapingJobs") || "[]");
-              const updated = jobs.map(j => j.jobId === jobId ? { ...j, ...job } : j);
-              localStorage.setItem("scrapingJobs", JSON.stringify(updated));
-              renderJobs(updated);
-              if (job.status === "completed" || job.status === "failed") {
-                clearInterval(interval);
-                loadCSVs();
-              }
-            } catch (err) {
-              clearInterval(interval);
-              console.error(err);
+     const monitorJobProgress = (jobId) => {
+        let stopped = false;
+        let intervalId = null;
+
+        const poll = async () => {
+          if (stopped) return;
+
+          try {
+            const res = await fetch(`/api/v1/scrape/status/${jobId}`);
+            const job = await res.json();
+
+            const currentJobs = (await (await fetch("/api/v1/jobs")).json()).payload || [];
+            const updated = currentJobs.map(j =>
+              j.jobId === jobId ? { ...j, ...job, progress: Number(job.progress || 0) } : j
+            );
+
+            renderJobs(updated);
+
+            if (job.status === "completed" || job.status === "failed") {
+              stopped = true;
+              if (intervalId) clearInterval(intervalId);
             }
-          }, 1000);
+          } catch (err) {
+            console.error("Polling error:", err);
+          }
         };
 
-        async function loadCSVs() {
-          const list = document.getElementById("csv-list");
-          list.innerHTML = "<li class='text-center'>Loading CSVs...</li>";
+        // Immediate first poll
+        poll();
+
+        // High-frequency polling for near real-time progress
+        intervalId = setInterval(poll, 1000);
+      };
+
+      // Global polling to keep all jobs up-to-date from server
+      const pollAllJobs = async () => {
+        try {
+          const res = await fetch("/api/v1/jobs");
+          const data = await res.json();
+          const jobs = (data && data.payload) || [];
+          renderJobs(jobs);
+        } catch (err) {
+          console.error("Failed to poll jobs:", err);
+        }
+      };
+
+
+        let pendingDelete = null;
+        const modal = {
+          container: document.getElementById("delete-modal"),
+          title: document.getElementById("delete-modal-title"),
+          confirm: document.getElementById("delete-modal-confirm"),
+          cancel: document.getElementById("delete-modal-cancel"),
+        };
+        const clearModal = {
+          container: document.getElementById("clear-modal"),
+          confirm: document.getElementById("clear-modal-confirm"),
+          cancel: document.getElementById("clear-modal-cancel"),
+        };
+
+        function openDeleteModal(encodedName) {
+          if (!encodedName) return;
+          pendingDelete = encodedName;
+          const decoded = decodeURIComponent(encodedName);
+          modal.title.textContent = `Delete "${decoded}"?`;
+          modal.container.classList.remove("hidden");
+        }
+
+        function closeDeleteModal() {
+          pendingDelete = null;
+          modal.container.classList.add("hidden");
+        }
+
+        function openClearJobsModal() {
+          clearModal.container.classList.remove("hidden");
+        }
+
+        async function confirmDelete() {
+          if (!pendingDelete) return;
           try {
-            const res = await fetch("/api/v1/csv");
-            const files = await res.json();
-            list.innerHTML = "";
-            if (!files.length) {
-              list.innerHTML = "<li class='text-center text-gray-500'>No CSVs available yet.</li>";
-              lastFileCount = 0;
-              return;
+            const res = await fetch(`/api/v1/delete/${pendingDelete}`, { method: 'DELETE' });
+            const body = await res.json().catch(() => ({}));
+            if (res.ok) {
+              await loadJobs();
+              showToast(body.messege || body.message || 'File deleted successfully.', 'success');
+            } else {
+              showToast(body.messege || body.message || 'Failed to delete file.', 'error');
             }
-            lastFileCount = files.length;
-            files.forEach(file => {
-              const li = document.createElement("li");
-              li.className = "flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg border border-gray-200";
-              const formattedDate = file.startedAt ? new Date(file.startedAt).toLocaleString() : "Unknown";
-              li.innerHTML = `
-                <div class="flex flex-col">
-                  <span class="font-medium">${file.fileName}</span>
-                  <span class="text-sm text-gray-600">Scraped: ${formattedDate}</span>
-                </div>
-                <a href="/download/${file.fileName}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">Download</a>
-              `;
-              list.appendChild(li);
-            });
           } catch (err) {
             console.error(err);
-            list.innerHTML = "<li class='text-center text-red-500'>Failed to load CSVs.</li>";
+            showToast('Error deleting file.', 'error');
+          } finally {
+            closeDeleteModal();
           }
         }
 
-        function startPolling() {
-          setInterval(async () => {
-            try {
-              const res = await fetch("/api/v1/csv");
-              const files = await res.json();
-              if (files.length !== lastFileCount) loadCSVs();
-            } catch (err) {
-              console.error(err);
-            }
-          }, 10000);
+        function showToast(message, type = "success") {
+          const container = document.getElementById("toast-container");
+          const toast = document.createElement("div");
+          toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white animate-slideUp ${type === "error" ? "bg-red-500" : "bg-green-500"}`;
+          toast.textContent = message;
+          container.appendChild(toast);
+          setTimeout(() => {
+            toast.classList.add("opacity-0", "transition-opacity", "duration-300");
+            setTimeout(() => toast.remove(), 300);
+          }, 2500);
         }
 
         document.getElementById("refresh-jobs").addEventListener("click", loadJobs);
-        document.getElementById("refresh-csvs").addEventListener("click", loadCSVs);
         document.getElementById("clear-storage").addEventListener("click", () => {
-          localStorage.removeItem("scrapingJobs");
-          loadJobs();
-          alert("Local storage cleared.");
+          openClearJobsModal();
+        });
+        modal.cancel.addEventListener("click", closeDeleteModal);
+        modal.confirm.addEventListener("click", confirmDelete);
+        jobList.addEventListener("click", (e) => {
+          const target = e.target;
+          const btn = target && target.closest ? target.closest(".job-delete-btn") : null;
+          if (btn && btn instanceof HTMLElement) {
+            e.preventDefault();
+            const name = btn.dataset.filename || "";
+            openDeleteModal(name);
+          }
+        });
+        clearModal.cancel.addEventListener("click", () => clearModal.container.classList.add("hidden"));
+        clearModal.confirm.addEventListener("click", async () => {
+          try {
+            const res = await fetch("/api/v1/jobs/clear", { method: "DELETE" });
+            if (!res.ok) throw new Error("Failed to clear jobs");
+            localStorage.removeItem("scrapingJobs");
+            loadJobs();
+            showToast("Jobs cleared locally and on server.", "success");
+          } catch (err) {
+            console.error(err);
+            showToast("Failed to clear jobs.", "error");
+          } finally {
+            clearModal.container.classList.add("hidden");
+          }
         });
 
         loadJobs();
-        loadCSVs();
-        startPolling();
+        // Downloads section removed; actions now live on each job card
+        // keep jobs in sync on page load and every 1s
+        pollAllJobs();
+        setInterval(pollAllJobs, 10000); // poll all jobs every 5s
       });
     </script>
+    <!-- Toast container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3 pointer-events-none"></div>
+    <!-- Delete confirmation modal -->
+    <div id="delete-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-200">
+        <h3 id="delete-modal-title" class="text-lg font-semibold text-gray-900 mb-4 break-words whitespace-normal">Delete file?</h3>
+        <p class="text-gray-600 mb-6 break-words whitespace-normal">This will permanently remove the file from the server.</p>
+        <div class="flex justify-end gap-3">
+          <button id="delete-modal-cancel" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">Cancel</button>
+          <button id="delete-modal-confirm" class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">Delete</button>
+        </div>
+      </div>
+    </div>
+    <!-- Clear jobs confirmation modal -->
+    <div id="clear-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-900 mb-4 break-words whitespace-normal">Clear all scraping jobs?</h3>
+        <p class="text-gray-600 mb-6 break-words whitespace-normal">This will clear local jobs and reset server job history (jobs.json).</p>
+        <div class="flex justify-end gap-3">
+          <button id="clear-modal-cancel" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">Cancel</button>
+          <button id="clear-modal-confirm" class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">Clear</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
