@@ -24,6 +24,8 @@ dotenv.config();
 const API_REGEX = new re("GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax", "i");
 const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
 const CONTAINER_SELECTOR = "#comp-le47op7r";
+const NEXT_BUTTON_TIMEOUT = 60000;
+const PAGE_API_TIMEOUT = 60000;
 const deriveStatus = (priceStr) => {
     const normalized = (priceStr || "").toLowerCase();
     if (!normalized.trim())
@@ -71,7 +73,7 @@ const safeParseJson = (response) => __awaiter(void 0, void 0, void 0, function* 
 const waitForContainer = (page) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const container = yield page.waitForSelector(CONTAINER_SELECTOR, {
-            timeout: 10000,
+            timeout: 20000,
         });
         yield container.scrollIntoViewIfNeeded();
         return true;
@@ -158,12 +160,12 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
             return [];
         // --- Wait for first API response (retry with reload/search if missing) ---
         const ensureFirstApi = () => __awaiter(void 0, void 0, void 0, function* () {
-            const maxAttempts = 3;
+            const maxAttempts = 5;
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
                 try {
                     if (firstApiReceived)
                         return;
-                    yield Promise.race([waitForEvent(firstApiEvent, "first", 60000)]);
+                    yield Promise.race([waitForEvent(firstApiEvent, "first", 90000)]);
                     return;
                 }
                 catch (_a) {
@@ -189,22 +191,47 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
             ? Math.floor(job_progress_point / pagesToScrape)
             : 0;
         // --- Pagination loop ---
+        const waitForNextButton = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (attempts = 3) {
+            for (let attempt = 1; attempt <= attempts; attempt++) {
+                try {
+                    const container = yield page.$(CONTAINER_SELECTOR);
+                    if (container) {
+                        yield container.scrollIntoViewIfNeeded();
+                        yield new Promise((resolve) => setTimeout(resolve, 1500));
+                    }
+                    const nextBtn = yield page.waitForSelector(NEXT_BUTTON_SELECTOR, {
+                        visible: true,
+                        timeout: NEXT_BUTTON_TIMEOUT,
+                    });
+                    const isDisabled = yield nextBtn.evaluate((btn) => btn.getAttribute("aria-disabled") === "true");
+                    if (isDisabled)
+                        return null;
+                    return nextBtn;
+                }
+                catch (err) {
+                    console.log(`⚠️ Next button attempt ${attempt} failed: ${err.message}`);
+                    yield new Promise((resolve) => setTimeout(resolve, 2000));
+                }
+            }
+            return null;
+        });
+        const waitForPageApi = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (attempts = 2) {
+            for (let attempt = 1; attempt <= attempts; attempt++) {
+                try {
+                    yield Promise.race([waitForEvent(pageApiEvent, "page", PAGE_API_TIMEOUT)]);
+                    return true;
+                }
+                catch (_a) {
+                    console.log(`⚠️ Page API response attempt ${attempt} timed out.`);
+                    yield new Promise((resolve) => setTimeout(resolve, 3000));
+                }
+            }
+            return false;
+        });
         while (currentPage < pagesToScrape) {
             try {
-                // Scroll the main container into view before clicking
-                const container = yield page.$("#comp-le47op7r");
-                if (container) {
-                    yield container.scrollIntoViewIfNeeded();
-                    // Small wait after scrolling to ensure DOM updates
-                    yield new Promise(resolve => setTimeout(resolve, 2000));
-                }
-                // Wait for Next button to be visible and enabled
-                const nextBtn = yield page.waitForSelector(NEXT_BUTTON_SELECTOR, {
-                    visible: true,
-                    timeout: 30000
-                });
-                const isDisabled = yield nextBtn.evaluate((btn) => btn.getAttribute('aria-disabled') === 'true');
-                if (isDisabled) {
+                const nextBtn = yield waitForNextButton(4);
+                if (!nextBtn) {
                     console.log(`✅ Next button disabled after page ${currentPage}.`);
                     break;
                 }
@@ -212,9 +239,15 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 console.log(`➡️ Going to page ${currentPage}...`);
                 // Click Next in the page context
                 yield nextBtn.click();
-                // Wait for page/API to load
-                yield new Promise(resolve => setTimeout(resolve, 30000));
-                console.log(`⏱ Waited 30 seconds for page ${currentPage}`);
+                const gotApi = yield waitForPageApi(3);
+                if (!gotApi) {
+                    console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);
+                    const retryBtn = yield waitForNextButton(2);
+                    if (retryBtn) {
+                        yield retryBtn.click();
+                        yield waitForPageApi(2);
+                    }
+                }
                 const progressDelta = Math.min(job_progress_point, statusPerPage * (currentPage - 1));
                 updateJob(jobId, { progress: prev_job_progress_point + progressDelta }, `Scraping page ${currentPage} of ${maxPages}`);
             }

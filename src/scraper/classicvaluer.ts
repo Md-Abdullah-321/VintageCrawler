@@ -30,6 +30,8 @@ const API_REGEX = new re(
 );
 const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
 const CONTAINER_SELECTOR = "#comp-le47op7r";
+const NEXT_BUTTON_TIMEOUT = 60000;
+const PAGE_API_TIMEOUT = 60000;
 
 const deriveStatus = (priceStr: string | undefined) => {
   const normalized = (priceStr || "").toLowerCase();
@@ -37,14 +39,14 @@ const deriveStatus = (priceStr: string | undefined) => {
   return normalized.includes("not sold") ? "Not Sold" : "Sold";
 };
 
-const waitForEvent = (emitter: EventEmitter, event: string, timeout: number) =>
-  new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Timeout")), timeout);
-    emitter.once(event, () => {
-      clearTimeout(timer);
-      resolve();
-    });
-  });
+    const waitForEvent = (emitter: EventEmitter, event: string, timeout: number) =>
+      new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("Timeout")), timeout);
+        emitter.once(event, () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
 
 const parseApiPayload = (
   data: any,
@@ -85,18 +87,18 @@ const safeParseJson = async (response: any) => {
   }
 };
 
-const waitForContainer = async (page: any) => {
-  try {
-    const container = await page.waitForSelector(CONTAINER_SELECTOR, {
-      timeout: 10000,
-    });
-    await container.scrollIntoViewIfNeeded();
-    return true;
-  } catch {
-    console.log(`⚠️ Container ${CONTAINER_SELECTOR} not found.`);
-    return false;
-  }
-};
+    const waitForContainer = async (page: any) => {
+      try {
+        const container = await page.waitForSelector(CONTAINER_SELECTOR, {
+          timeout: 20000,
+        });
+        await container.scrollIntoViewIfNeeded();
+        return true;
+      } catch {
+        console.log(`⚠️ Container ${CONTAINER_SELECTOR} not found.`);
+        return false;
+      }
+    };
 
 export const scrapClassicValuer = async (
   method: string,
@@ -200,11 +202,11 @@ export const scrapClassicValuer = async (
 
     // --- Wait for first API response (retry with reload/search if missing) ---
     const ensureFirstApi = async () => {
-      const maxAttempts = 3;
+      const maxAttempts = 5;
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           if (firstApiReceived) return;
-          await Promise.race([waitForEvent(firstApiEvent, "first", 60000)]);
+          await Promise.race([waitForEvent(firstApiEvent, "first", 90000)]);
           return;
         } catch {
           console.log(`⚠️ First API response attempt ${attempt} timed out.`);
@@ -232,24 +234,50 @@ export const scrapClassicValuer = async (
       : 0;
 
     // --- Pagination loop ---
+    const waitForNextButton = async (attempts = 3) => {
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          const container = await page.$(CONTAINER_SELECTOR);
+          if (container) {
+            await container.scrollIntoViewIfNeeded();
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+          }
+
+          const nextBtn = await page.waitForSelector(NEXT_BUTTON_SELECTOR, {
+            visible: true,
+            timeout: NEXT_BUTTON_TIMEOUT,
+          });
+
+          const isDisabled = await nextBtn.evaluate(
+            (btn: any) => btn.getAttribute("aria-disabled") === "true"
+          );
+          if (isDisabled) return null;
+          return nextBtn;
+        } catch (err: any) {
+          console.log(`⚠️ Next button attempt ${attempt} failed: ${err.message}`);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      }
+      return null;
+    };
+
+    const waitForPageApi = async (attempts = 2) => {
+      for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+          await Promise.race([waitForEvent(pageApiEvent, "page", PAGE_API_TIMEOUT)]);
+          return true;
+        } catch {
+          console.log(`⚠️ Page API response attempt ${attempt} timed out.`);
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
+      }
+      return false;
+    };
+
     while (currentPage < pagesToScrape) {
       try {
-        // Scroll the main container into view before clicking
-        const container = await page.$("#comp-le47op7r");
-        if (container) {
-          await container.scrollIntoViewIfNeeded();
-          // Small wait after scrolling to ensure DOM updates
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-
-        // Wait for Next button to be visible and enabled
-        const nextBtn = await page.waitForSelector(NEXT_BUTTON_SELECTOR, {
-          visible: true,
-          timeout: 30000
-        });
-
-        const isDisabled = await nextBtn.evaluate((btn: any) => btn.getAttribute('aria-disabled') === 'true');
-        if (isDisabled) {
+        const nextBtn = await waitForNextButton(4);
+        if (!nextBtn) {
           console.log(`✅ Next button disabled after page ${currentPage}.`);
           break;
         }
@@ -260,9 +288,15 @@ export const scrapClassicValuer = async (
         // Click Next in the page context
         await nextBtn.click();
 
-        // Wait for page/API to load
-        await new Promise(resolve => setTimeout(resolve, 30000));
-        console.log(`⏱ Waited 30 seconds for page ${currentPage}`);
+        const gotApi = await waitForPageApi(3);
+        if (!gotApi) {
+          console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);
+          const retryBtn = await waitForNextButton(2);
+          if (retryBtn) {
+            await retryBtn.click();
+            await waitForPageApi(2);
+          }
+        }
 
         const progressDelta = Math.min(
           job_progress_point,

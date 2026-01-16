@@ -71,13 +71,33 @@ const saveJobs = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 // Initialize jobs on startup
 loadJobs();
-/** Updates job progress/status and logs */
-export const updateJob = (id, data, logMessage) => {
+export const updateJob = (id, data, logMessage, options) => {
+    var _a, _b, _c, _d;
     const job = jobs.get(id) || { status: "not found", progress: 0, logs: [] };
     const logs = job.logs || [];
     if (logMessage)
         logs.push({ message: logMessage, timestamp: new Date().toISOString() });
-    jobs.set(id, Object.assign(Object.assign(Object.assign({}, job), data), { logs }));
+    const isBulkJob = job.method === "bulk_excel";
+    const nextData = Object.assign({}, data);
+    if (isBulkJob) {
+        if (typeof nextData.progress === "number") {
+            if (!(options === null || options === void 0 ? void 0 : options.allowBulkProgress)) {
+                const totalItems = (_b = (_a = nextData.totalItems) !== null && _a !== void 0 ? _a : job.totalItems) !== null && _b !== void 0 ? _b : 0;
+                const completedItems = (_d = (_c = nextData.completedItems) !== null && _c !== void 0 ? _c : job.completedItems) !== null && _d !== void 0 ? _d : 0;
+                if (totalItems > 0) {
+                    const itemFraction = Math.max(0, Math.min(100, nextData.progress)) / 100;
+                    const overall = Math.round(((completedItems + itemFraction) / totalItems) * 100);
+                    nextData.progress = Math.max(0, Math.min(100, overall));
+                }
+                else {
+                    delete nextData.progress;
+                }
+            }
+        }
+        if (!(options === null || options === void 0 ? void 0 : options.allowBulkStatus))
+            delete nextData.status;
+    }
+    jobs.set(id, Object.assign(Object.assign(Object.assign({}, job), nextData), { logs }));
     debounceSaveJobs(10000);
 };
 /**
@@ -184,7 +204,7 @@ export const startScraping = (method_1, url_1, make_1, model_1, transmission_1, 
             }
             if (site === "classic.com" || site === "both") {
                 setProgress(isBoth ? 50 : 10, `Starting scrapeClassicCom for ${make} ${model}`);
-                const classicComResults = yield scrapClassicCom(browser, page, make, model, transmission);
+                const classicComResults = yield scrapClassicCom(browser, page, make, model, transmission, id);
                 results.push(...classicComResults);
                 setProgress(Math.min(5 + perSiteProgress * (isBoth ? 2 : 1), 90), `scrapClassicCom returned ${classicComResults.length} results`);
                 if (site === "classic.com") {

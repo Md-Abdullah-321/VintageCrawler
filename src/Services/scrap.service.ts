@@ -89,11 +89,43 @@ const saveJobs = async () => {
 loadJobs();
 
 /** Updates job progress/status and logs */
-export const updateJob = (id: string, data: Partial<JobStatus>, logMessage?: string) => {
+type UpdateJobOptions = {
+  allowBulkProgress?: boolean;
+  allowBulkStatus?: boolean;
+};
+
+export const updateJob = (
+  id: string,
+  data: Partial<JobStatus>,
+  logMessage?: string,
+  options?: UpdateJobOptions
+) => {
   const job = jobs.get(id) || { status: "not found", progress: 0, logs: [] };
   const logs = job.logs || [];
   if (logMessage) logs.push({ message: logMessage, timestamp: new Date().toISOString() });
-  jobs.set(id, { ...job, ...data, logs });
+
+  const isBulkJob = job.method === "bulk_excel";
+  const nextData = { ...data };
+
+  if (isBulkJob) {
+    if (typeof nextData.progress === "number") {
+      if (!options?.allowBulkProgress) {
+        const totalItems = nextData.totalItems ?? job.totalItems ?? 0;
+        const completedItems = nextData.completedItems ?? job.completedItems ?? 0;
+        if (totalItems > 0) {
+          const itemFraction = Math.max(0, Math.min(100, nextData.progress)) / 100;
+          const overall = Math.round(((completedItems + itemFraction) / totalItems) * 100);
+          nextData.progress = Math.max(0, Math.min(100, overall));
+        } else {
+          delete nextData.progress;
+        }
+      }
+    }
+
+    if (!options?.allowBulkStatus) delete nextData.status;
+  }
+
+  jobs.set(id, { ...job, ...nextData, logs });
   debounceSaveJobs(10000);
 };
 
@@ -219,7 +251,7 @@ export const startScraping = async (
 
       if (site === "classic.com" || site === "both") {
         setProgress(isBoth ? 50 : 10, `Starting scrapeClassicCom for ${make} ${model}`);
-        const classicComResults = await scrapClassicCom(browser, page, make, model, transmission);
+        const classicComResults = await scrapClassicCom(browser, page, make, model, transmission, id);
         results.push(...classicComResults);
         setProgress(Math.min(5 + perSiteProgress * (isBoth ? 2 : 1), 90), `scrapClassicCom returned ${classicComResults.length} results`);
         if (site === "classic.com") {

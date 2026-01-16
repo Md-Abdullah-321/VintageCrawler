@@ -11,15 +11,19 @@ import * as fs from "fs";
 import path from "path";
 import XLSX from "xlsx";
 
-import { closeBrowser, launchBrowser } from "../helpers/puppeteer-utils.js";
+import { closeBrowser, closePage, createPage, launchBrowser } from "../helpers/puppeteer-utils.js";
 import { getDateStr, wait } from "../helpers/utils.js";
+import { saveToCSV } from "../helpers/output.js";
 import {
   getJobStatus,
   jobs,
   startScraping,
+  updateJob,
   type JobStatus,
 } from "../Services/scrap.service.js";
 import { successResponse } from "./responseController.js";
+import { scrapeClassicComWithURL } from "../scraper/classic-url.js";
+import { scrapClassicValuer } from "../scraper/classicvaluer.js";
 
 const appendJobLog = (job: JobStatus | undefined, message: string) => {
   if (!job) return;
@@ -221,6 +225,16 @@ async function processBulkScraping(
       appendJobLog(job, `Skipping row ${i + 1}: No URL`);
       job.completedItems = (job.completedItems ?? 0) + 1;
       job.progress = Math.round((job.completedItems / job.totalItems) * 100);
+      updateJob(
+        jobId,
+        {
+          completedItems: job.completedItems,
+          totalItems: job.totalItems,
+          progress: job.progress,
+        },
+        undefined,
+        { allowBulkProgress: true }
+      );
       continue;
     }
 
@@ -236,13 +250,23 @@ async function processBulkScraping(
       appendJobLog(job, `Skipping row ${i + 1}: Unknown site`);
       job.completedItems = (job.completedItems ?? 0) + 1;
       job.progress = Math.round((job.completedItems / job.totalItems) * 100);
+      updateJob(
+        jobId,
+        {
+          completedItems: job.completedItems,
+          totalItems: job.totalItems,
+          progress: job.progress,
+        },
+        undefined,
+        { allowBulkProgress: true }
+      );
       continue;
     }
 
     try {
       // Wait a good amount of time before starting a new job
       await wait(5000);
-      console.log(`Starting scrape for row ${i + 1}: ${row.URL}`);
+      appendJobLog(job, `Row ${i + 1}: Starting scrape for ${targetUrl}`);
 
       // Relaunch browser every 10 items to avoid memory issues
       if (i > 0 && i % 10 === 0) {
@@ -251,43 +275,17 @@ async function processBulkScraping(
         browser = await launchBrowser(!debug_mode);
       }
 
-      const response = await startScraping(
-        "url",
+      const scrapedCount = await scrapeUrlToCsv(
+        jobId,
         targetUrl,
-        "",
-        "",
-        "",
-        site,
-        keep_duplicates,
         browser,
-        true
+        finalCsvPath
       );
 
-      const singleJobId = response.payload.jobId;
-
-      while (true) {
-        const singleJob = getJobStatus(singleJobId);
-
-        if (singleJob.status !== "in progress") {
-          if (singleJob.status === "completed") {
-            const jobFileName = singleJob.fileName || `${singleJobId}.csv`;
-            const tempCsvPath = path.join(process.cwd(), "output", jobFileName);
-
-            if (fs.existsSync(tempCsvPath)) {
-              if (tempCsvPath !== finalCsvPath) {
-                fs.renameSync(tempCsvPath, finalCsvPath);
-              }
-              successfulCsvCount++;
-            } else {
-              appendJobLog(job, `CSV missing for row ${i + 1}`);
-            }
-          } else {
-            appendJobLog(job, `Row ${i + 1} scraping failed`);
-          }
-          break;
-        }
-
-        await new Promise((r) => setTimeout(r, 3000));
+      if (scrapedCount > 0 && fs.existsSync(finalCsvPath)) {
+        successfulCsvCount++;
+      } else {
+        appendJobLog(job, `Row ${i + 1}: No data saved`);
       }
     } catch (err: any) {
       appendJobLog(job, `Row ${i + 1} failed: ${err.message}`);
@@ -296,6 +294,16 @@ async function processBulkScraping(
     job.completedItems = (job.completedItems ?? 0) + 1;
     const totalItems = job.totalItems || rows.length || 1;
     job.progress = Math.round((job.completedItems / totalItems) * 100);
+    updateJob(
+      jobId,
+      {
+        completedItems: job.completedItems,
+        totalItems,
+        progress: job.progress,
+      },
+      undefined,
+      { allowBulkProgress: true }
+    );
   }
 
   try {
@@ -306,7 +314,12 @@ async function processBulkScraping(
 
   if (successfulCsvCount === 0) {
     job.status = "failed";
-    appendJobLog(job, "No CSV files were generated");
+    updateJob(
+      jobId,
+      { status: "failed", progress: job.progress },
+      "No CSV files were generated",
+      { allowBulkStatus: true, allowBulkProgress: true }
+    );
     return;
   }
 
@@ -334,7 +347,54 @@ async function processBulkScraping(
   job.status = "completed";
   job.fileName = path.basename(zipPath);
   job.progress = 100;
-  appendJobLog(job, `Bulk scraping completed and zipped successfully: ${job.fileName}`);
+  updateJob(
+    jobId,
+    {
+      status: "completed",
+      progress: 100,
+      fileName: job.fileName,
+      completedItems: job.totalItems,
+      totalItems: job.totalItems,
+    },
+    `Bulk scraping completed and zipped successfully: ${job.fileName}`,
+    { allowBulkStatus: true, allowBulkProgress: true }
+  );
+}
+
+async function scrapeUrlToCsv(
+  jobId: string,
+  targetUrl: string,
+  browser: any,
+  outputPath: string
+): Promise<number> {
+  const page = await createPage(browser);
+  try {
+    if (targetUrl.includes("theclassicvaluer.com")) {
+      const results = await scrapClassicValuer(
+        "url",
+        page,
+        "",
+        "",
+        "",
+        targetUrl,
+        jobId,
+        70,
+        20
+      );
+      await saveToCSV(results, outputPath);
+      return results.length;
+    }
+
+    if (targetUrl.includes("classic.com")) {
+      const results = await scrapeClassicComWithURL(targetUrl, page, jobId);
+      await saveToCSV(results, outputPath);
+      return results.length;
+    }
+
+    throw new Error(`Unknown site for URL: ${targetUrl}`);
+  } finally {
+    await closePage(page);
+  }
 }
 
 

@@ -17,10 +17,13 @@ import archiver from "archiver";
 import * as fs from "fs";
 import path from "path";
 import XLSX from "xlsx";
-import { closeBrowser, launchBrowser } from "../helpers/puppeteer-utils.js";
+import { closeBrowser, closePage, createPage, launchBrowser } from "../helpers/puppeteer-utils.js";
 import { getDateStr, wait } from "../helpers/utils.js";
-import { getJobStatus, jobs, startScraping, } from "../Services/scrap.service.js";
+import { saveToCSV } from "../helpers/output.js";
+import { getJobStatus, jobs, startScraping, updateJob, } from "../Services/scrap.service.js";
 import { successResponse } from "./responseController.js";
+import { scrapeClassicComWithURL } from "../scraper/classic-url.js";
+import { scrapClassicValuer } from "../scraper/classicvaluer.js";
 const appendJobLog = (job, message) => {
     if (!job)
         return;
@@ -159,6 +162,11 @@ function processBulkScraping(jobId_1, rows_1, keep_duplicates_1, debug_mode_1) {
                 appendJobLog(job, `Skipping row ${i + 1}: No URL`);
                 job.completedItems = ((_c = job.completedItems) !== null && _c !== void 0 ? _c : 0) + 1;
                 job.progress = Math.round((job.completedItems / job.totalItems) * 100);
+                updateJob(jobId, {
+                    completedItems: job.completedItems,
+                    totalItems: job.totalItems,
+                    progress: job.progress,
+                }, undefined, { allowBulkProgress: true });
                 continue;
             }
             const carName = normalize(row.Car || `item_${i}`);
@@ -173,42 +181,29 @@ function processBulkScraping(jobId_1, rows_1, keep_duplicates_1, debug_mode_1) {
                 appendJobLog(job, `Skipping row ${i + 1}: Unknown site`);
                 job.completedItems = ((_d = job.completedItems) !== null && _d !== void 0 ? _d : 0) + 1;
                 job.progress = Math.round((job.completedItems / job.totalItems) * 100);
+                updateJob(jobId, {
+                    completedItems: job.completedItems,
+                    totalItems: job.totalItems,
+                    progress: job.progress,
+                }, undefined, { allowBulkProgress: true });
                 continue;
             }
             try {
                 // Wait a good amount of time before starting a new job
                 yield wait(5000);
-                console.log(`Starting scrape for row ${i + 1}: ${row.URL}`);
+                appendJobLog(job, `Row ${i + 1}: Starting scrape for ${targetUrl}`);
                 // Relaunch browser every 10 items to avoid memory issues
                 if (i > 0 && i % 10 === 0) {
                     yield closeBrowser(browser);
                     yield wait(5000);
                     browser = yield launchBrowser(!debug_mode);
                 }
-                const response = yield startScraping("url", targetUrl, "", "", "", site, keep_duplicates, browser, true);
-                const singleJobId = response.payload.jobId;
-                while (true) {
-                    const singleJob = getJobStatus(singleJobId);
-                    if (singleJob.status !== "in progress") {
-                        if (singleJob.status === "completed") {
-                            const jobFileName = singleJob.fileName || `${singleJobId}.csv`;
-                            const tempCsvPath = path.join(process.cwd(), "output", jobFileName);
-                            if (fs.existsSync(tempCsvPath)) {
-                                if (tempCsvPath !== finalCsvPath) {
-                                    fs.renameSync(tempCsvPath, finalCsvPath);
-                                }
-                                successfulCsvCount++;
-                            }
-                            else {
-                                appendJobLog(job, `CSV missing for row ${i + 1}`);
-                            }
-                        }
-                        else {
-                            appendJobLog(job, `Row ${i + 1} scraping failed`);
-                        }
-                        break;
-                    }
-                    yield new Promise((r) => setTimeout(r, 3000));
+                const scrapedCount = yield scrapeUrlToCsv(jobId, targetUrl, browser, finalCsvPath);
+                if (scrapedCount > 0 && fs.existsSync(finalCsvPath)) {
+                    successfulCsvCount++;
+                }
+                else {
+                    appendJobLog(job, `Row ${i + 1}: No data saved`);
                 }
             }
             catch (err) {
@@ -217,6 +212,11 @@ function processBulkScraping(jobId_1, rows_1, keep_duplicates_1, debug_mode_1) {
             job.completedItems = ((_e = job.completedItems) !== null && _e !== void 0 ? _e : 0) + 1;
             const totalItems = job.totalItems || rows.length || 1;
             job.progress = Math.round((job.completedItems / totalItems) * 100);
+            updateJob(jobId, {
+                completedItems: job.completedItems,
+                totalItems,
+                progress: job.progress,
+            }, undefined, { allowBulkProgress: true });
         }
         try {
             yield browser.close();
@@ -226,7 +226,7 @@ function processBulkScraping(jobId_1, rows_1, keep_duplicates_1, debug_mode_1) {
         }
         if (successfulCsvCount === 0) {
             job.status = "failed";
-            appendJobLog(job, "No CSV files were generated");
+            updateJob(jobId, { status: "failed", progress: job.progress }, "No CSV files were generated", { allowBulkStatus: true, allowBulkProgress: true });
             return;
         }
         /* ---------- ZIP FINAL FOLDER ---------- */
@@ -249,7 +249,34 @@ function processBulkScraping(jobId_1, rows_1, keep_duplicates_1, debug_mode_1) {
         job.status = "completed";
         job.fileName = path.basename(zipPath);
         job.progress = 100;
-        appendJobLog(job, `Bulk scraping completed and zipped successfully: ${job.fileName}`);
+        updateJob(jobId, {
+            status: "completed",
+            progress: 100,
+            fileName: job.fileName,
+            completedItems: job.totalItems,
+            totalItems: job.totalItems,
+        }, `Bulk scraping completed and zipped successfully: ${job.fileName}`, { allowBulkStatus: true, allowBulkProgress: true });
+    });
+}
+function scrapeUrlToCsv(jobId, targetUrl, browser, outputPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const page = yield createPage(browser);
+        try {
+            if (targetUrl.includes("theclassicvaluer.com")) {
+                const results = yield scrapClassicValuer("url", page, "", "", "", targetUrl, jobId, 70, 20);
+                yield saveToCSV(results, outputPath);
+                return results.length;
+            }
+            if (targetUrl.includes("classic.com")) {
+                const results = yield scrapeClassicComWithURL(targetUrl, page, jobId);
+                yield saveToCSV(results, outputPath);
+                return results.length;
+            }
+            throw new Error(`Unknown site for URL: ${targetUrl}`);
+        }
+        finally {
+            yield closePage(page);
+        }
     });
 }
 /**
