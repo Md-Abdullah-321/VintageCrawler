@@ -274,8 +274,16 @@ const fetchApiData = (page, request) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 const randomWait = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (minMs = 800, maxMs = 2200) {
-    const jitter = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    const envMin = Number(process.env.CLASSIC_VALUER_ACTION_WAIT_MIN_MS);
+    const envMax = Number(process.env.CLASSIC_VALUER_ACTION_WAIT_MAX_MS);
+    const finalMin = Number.isNaN(envMin) ? minMs : envMin;
+    const finalMax = Number.isNaN(envMax) ? maxMs : envMax;
+    const jitter = Math.floor(Math.random() * (finalMax - finalMin + 1)) + finalMin;
     yield wait(jitter);
+});
+const waitAfterNextClick = () => __awaiter(void 0, void 0, void 0, function* () {
+    const delay = Number(process.env.CLASSIC_VALUER_WAIT_AFTER_NEXT_MS || 30000);
+    yield wait(delay);
 });
 export const scrapClassicValuer = (method, page, make, model, transmission, url, jobId, job_progress_point, prev_job_progress_point) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -454,7 +462,7 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 // Click Next in the page context
                 yield randomWait();
                 yield nextBtn.click();
-                yield wait(4000);
+                yield waitAfterNextClick();
                 const gotApi = yield waitForPageApi(currentPage, 3);
                 if (!gotApi) {
                     console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);

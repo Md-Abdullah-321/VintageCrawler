@@ -331,8 +331,18 @@ const fetchApiData = async (
 };
 
 const randomWait = async (minMs = 800, maxMs = 2200) => {
-  const jitter = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  const envMin = Number(process.env.CLASSIC_VALUER_ACTION_WAIT_MIN_MS);
+  const envMax = Number(process.env.CLASSIC_VALUER_ACTION_WAIT_MAX_MS);
+  const finalMin = Number.isNaN(envMin) ? minMs : envMin;
+  const finalMax = Number.isNaN(envMax) ? maxMs : envMax;
+  const jitter =
+    Math.floor(Math.random() * (finalMax - finalMin + 1)) + finalMin;
   await wait(jitter);
+};
+
+const waitAfterNextClick = async () => {
+  const delay = Number(process.env.CLASSIC_VALUER_WAIT_AFTER_NEXT_MS || 30000);
+  await wait(delay);
 };
 
 export const scrapClassicValuer = async (
@@ -547,7 +557,7 @@ export const scrapClassicValuer = async (
         // Click Next in the page context
         await randomWait();
         await nextBtn.click();
-        await wait(4000);
+        await waitAfterNextClick();
 
         const gotApi = await waitForPageApi(currentPage, 3);
         if (!gotApi) {
