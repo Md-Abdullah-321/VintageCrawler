@@ -50,6 +50,7 @@ export const createPage = (browser) => __awaiter(void 0, void 0, void 0, functio
     try {
         console.log("Creating new page...");
         const page = yield browser.newPage();
+        yield page.setCacheEnabled(false);
         yield page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         yield page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9" });
         console.log("New page created successfully.");

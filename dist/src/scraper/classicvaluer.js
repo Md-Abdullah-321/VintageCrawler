@@ -25,7 +25,7 @@ const API_REGEX = new re("GetApiByV2ByAuctionResultsByCollectionByCollectionStri
 const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
 const CONTAINER_SELECTOR = "#comp-le47op7r";
 const NEXT_BUTTON_TIMEOUT = Number(process.env.CLASSIC_VALUER_NEXT_TIMEOUT || 60000);
-const PAGE_API_TIMEOUT = Number(process.env.CLASSIC_VALUER_PAGE_API_TIMEOUT || 120000);
+const PAGE_API_TIMEOUT = Number(process.env.CLASSIC_VALUER_PAGE_API_TIMEOUT || 180000);
 const FIRST_API_TIMEOUT = Number(process.env.CLASSIC_VALUER_FIRST_API_TIMEOUT || 90000);
 const deriveStatus = (priceStr) => {
     const normalized = (priceStr || "").toLowerCase();
@@ -240,6 +240,13 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                         return true;
                     yield Promise.race([
                         waitForPageEvent(pageApiEvent, "page", PAGE_API_TIMEOUT, expectedPage),
+                        page.waitForResponse((res) => {
+                            var _a, _b;
+                            return API_REGEX.test(res.url()) &&
+                                res.status() === 200 &&
+                                ((((_a = res.headers()) === null || _a === void 0 ? void 0 : _a["content-type"]) || "").includes("application/json") ||
+                                    (((_b = res.headers()) === null || _b === void 0 ? void 0 : _b["content-type"]) || "").includes("text/plain"));
+                        }, { timeout: PAGE_API_TIMEOUT }),
                     ]);
                     return true;
                 }
@@ -261,7 +268,7 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 console.log(`➡️ Going to page ${currentPage}...`);
                 // Click Next in the page context
                 yield nextBtn.click();
-                yield wait(2000);
+                yield wait(4000);
                 const gotApi = yield waitForPageApi(currentPage, 3);
                 if (!gotApi) {
                     console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);

@@ -34,7 +34,7 @@ const NEXT_BUTTON_TIMEOUT = Number(
   process.env.CLASSIC_VALUER_NEXT_TIMEOUT || 60000
 );
 const PAGE_API_TIMEOUT = Number(
-  process.env.CLASSIC_VALUER_PAGE_API_TIMEOUT || 120000
+  process.env.CLASSIC_VALUER_PAGE_API_TIMEOUT || 180000
 );
 const FIRST_API_TIMEOUT = Number(
   process.env.CLASSIC_VALUER_FIRST_API_TIMEOUT || 90000
@@ -300,6 +300,14 @@ export const scrapClassicValuer = async (
           if (lastSeenPageEvent >= expectedPage) return true;
           await Promise.race([
             waitForPageEvent(pageApiEvent, "page", PAGE_API_TIMEOUT, expectedPage),
+            page.waitForResponse(
+              (res: any) =>
+                API_REGEX.test(res.url()) &&
+                res.status() === 200 &&
+                ((res.headers()?.["content-type"] || "").includes("application/json") ||
+                  (res.headers()?.["content-type"] || "").includes("text/plain")),
+              { timeout: PAGE_API_TIMEOUT }
+            ),
           ]);
           return true;
         } catch {
@@ -323,7 +331,7 @@ export const scrapClassicValuer = async (
 
         // Click Next in the page context
         await nextBtn.click();
-        await wait(2000);
+        await wait(4000);
 
         const gotApi = await waitForPageApi(currentPage, 3);
         if (!gotApi) {
