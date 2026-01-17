@@ -30,8 +30,15 @@ const API_REGEX = new re(
 );
 const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
 const CONTAINER_SELECTOR = "#comp-le47op7r";
-const NEXT_BUTTON_TIMEOUT = 60000;
-const PAGE_API_TIMEOUT = 60000;
+const NEXT_BUTTON_TIMEOUT = Number(
+  process.env.CLASSIC_VALUER_NEXT_TIMEOUT || 60000
+);
+const PAGE_API_TIMEOUT = Number(
+  process.env.CLASSIC_VALUER_PAGE_API_TIMEOUT || 120000
+);
+const FIRST_API_TIMEOUT = Number(
+  process.env.CLASSIC_VALUER_FIRST_API_TIMEOUT || 90000
+);
 
 const deriveStatus = (priceStr: string | undefined) => {
   const normalized = (priceStr || "").toLowerCase();
@@ -46,6 +53,29 @@ const waitForEvent = (emitter: EventEmitter, event: string, timeout: number) =>
       clearTimeout(timer);
       resolve();
     });
+  });
+
+const waitForPageEvent = (
+  emitter: EventEmitter,
+  event: string,
+  timeout: number,
+  expectedPage: number
+) =>
+  new Promise<void>((resolve, reject) => {
+    const handler = (pageNum: number) => {
+      if (pageNum >= expectedPage) {
+        clearTimeout(timer);
+        emitter.removeListener(event, handler);
+        resolve();
+      }
+    };
+
+    const timer = setTimeout(() => {
+      emitter.removeListener(event, handler);
+      reject(new Error("Timeout"));
+    }, timeout);
+
+    emitter.on(event, handler);
   });
 
 const parseApiPayload = (
@@ -206,7 +236,9 @@ export const scrapClassicValuer = async (
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           if (firstApiReceived) return;
-          await Promise.race([waitForEvent(firstApiEvent, "first", 90000)]);
+          await Promise.race([
+            waitForEvent(firstApiEvent, "first", FIRST_API_TIMEOUT),
+          ]);
           return;
         } catch {
           console.log(`⚠️ First API response attempt ${attempt} timed out.`);
@@ -262,10 +294,13 @@ export const scrapClassicValuer = async (
       return null;
     };
 
-    const waitForPageApi = async (attempts = 2) => {
+    const waitForPageApi = async (expectedPage: number, attempts = 2) => {
       for (let attempt = 1; attempt <= attempts; attempt++) {
         try {
-          await Promise.race([waitForEvent(pageApiEvent, "page", PAGE_API_TIMEOUT)]);
+          if (lastSeenPageEvent >= expectedPage) return true;
+          await Promise.race([
+            waitForPageEvent(pageApiEvent, "page", PAGE_API_TIMEOUT, expectedPage),
+          ]);
           return true;
         } catch {
           console.log(`⚠️ Page API response attempt ${attempt} timed out.`);
@@ -290,13 +325,13 @@ export const scrapClassicValuer = async (
         await nextBtn.click();
         await wait(2000);
 
-        const gotApi = await waitForPageApi(3);
+        const gotApi = await waitForPageApi(currentPage, 3);
         if (!gotApi) {
           console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);
           const retryBtn = await waitForNextButton(2);
           if (retryBtn) {
             await retryBtn.click();
-            await waitForPageApi(2);
+            await waitForPageApi(currentPage, 2);
           }
         }
 

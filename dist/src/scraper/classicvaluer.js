@@ -24,8 +24,9 @@ dotenv.config();
 const API_REGEX = new re("GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax", "i");
 const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
 const CONTAINER_SELECTOR = "#comp-le47op7r";
-const NEXT_BUTTON_TIMEOUT = 60000;
-const PAGE_API_TIMEOUT = 60000;
+const NEXT_BUTTON_TIMEOUT = Number(process.env.CLASSIC_VALUER_NEXT_TIMEOUT || 60000);
+const PAGE_API_TIMEOUT = Number(process.env.CLASSIC_VALUER_PAGE_API_TIMEOUT || 120000);
+const FIRST_API_TIMEOUT = Number(process.env.CLASSIC_VALUER_FIRST_API_TIMEOUT || 90000);
 const deriveStatus = (priceStr) => {
     const normalized = (priceStr || "").toLowerCase();
     if (!normalized.trim())
@@ -38,6 +39,20 @@ const waitForEvent = (emitter, event, timeout) => new Promise((resolve, reject) 
         clearTimeout(timer);
         resolve();
     });
+});
+const waitForPageEvent = (emitter, event, timeout, expectedPage) => new Promise((resolve, reject) => {
+    const handler = (pageNum) => {
+        if (pageNum >= expectedPage) {
+            clearTimeout(timer);
+            emitter.removeListener(event, handler);
+            resolve();
+        }
+    };
+    const timer = setTimeout(() => {
+        emitter.removeListener(event, handler);
+        reject(new Error("Timeout"));
+    }, timeout);
+    emitter.on(event, handler);
 });
 const parseApiPayload = (data, seenPayloadSignatures) => {
     var _a, _b;
@@ -165,7 +180,9 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 try {
                     if (firstApiReceived)
                         return;
-                    yield Promise.race([waitForEvent(firstApiEvent, "first", 90000)]);
+                    yield Promise.race([
+                        waitForEvent(firstApiEvent, "first", FIRST_API_TIMEOUT),
+                    ]);
                     return;
                 }
                 catch (_a) {
@@ -216,10 +233,14 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
             }
             return null;
         });
-        const waitForPageApi = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (attempts = 2) {
+        const waitForPageApi = (expectedPage_1, ...args_1) => __awaiter(void 0, [expectedPage_1, ...args_1], void 0, function* (expectedPage, attempts = 2) {
             for (let attempt = 1; attempt <= attempts; attempt++) {
                 try {
-                    yield Promise.race([waitForEvent(pageApiEvent, "page", PAGE_API_TIMEOUT)]);
+                    if (lastSeenPageEvent >= expectedPage)
+                        return true;
+                    yield Promise.race([
+                        waitForPageEvent(pageApiEvent, "page", PAGE_API_TIMEOUT, expectedPage),
+                    ]);
                     return true;
                 }
                 catch (_a) {
@@ -241,13 +262,13 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 // Click Next in the page context
                 yield nextBtn.click();
                 yield wait(2000);
-                const gotApi = yield waitForPageApi(3);
+                const gotApi = yield waitForPageApi(currentPage, 3);
                 if (!gotApi) {
                     console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);
                     const retryBtn = yield waitForNextButton(2);
                     if (retryBtn) {
                         yield retryBtn.click();
-                        yield waitForPageApi(2);
+                        yield waitForPageApi(currentPage, 2);
                     }
                 }
                 const progressDelta = Math.min(job_progress_point, statusPerPage * (currentPage - 1));
