@@ -98,25 +98,209 @@ const waitForContainer = (page) => __awaiter(void 0, void 0, void 0, function* (
         return false;
     }
 });
+const buildNextRequest = (lastRequest, targetPage) => {
+    if (!lastRequest)
+        return null;
+    const tryUpdateQuery = (urlStr) => {
+        try {
+            const url = new URL(urlStr);
+            const params = url.searchParams;
+            const pageKeys = [
+                "page",
+                "pageNumber",
+                "pageNum",
+                "page_index",
+                "pageIndex",
+                "p",
+            ];
+            const offsetKeys = ["offset", "skip", "start", "from"];
+            const limitKeys = ["limit", "pageSize", "perPage", "count"];
+            for (const key of pageKeys) {
+                if (params.has(key)) {
+                    params.set(key, String(targetPage));
+                    url.search = params.toString();
+                    return { url: url.toString(), method: "GET" };
+                }
+            }
+            let limitValue = null;
+            for (const key of limitKeys) {
+                if (params.has(key)) {
+                    const raw = Number(params.get(key));
+                    if (!Number.isNaN(raw) && raw > 0)
+                        limitValue = raw;
+                }
+            }
+            for (const key of offsetKeys) {
+                if (params.has(key)) {
+                    const step = limitValue || 12;
+                    const offset = (targetPage - 1) * step;
+                    params.set(key, String(offset));
+                    url.search = params.toString();
+                    return { url: url.toString(), method: "GET" };
+                }
+            }
+        }
+        catch (_a) {
+            return null;
+        }
+        return null;
+    };
+    if (lastRequest.method === "GET") {
+        return tryUpdateQuery(lastRequest.url);
+    }
+    if (lastRequest.method === "POST" && lastRequest.postData) {
+        const raw = lastRequest.postData.trim();
+        if (raw.startsWith("{")) {
+            try {
+                const data = JSON.parse(raw);
+                const pageKeys = [
+                    "page",
+                    "pageNumber",
+                    "pageNum",
+                    "page_index",
+                    "pageIndex",
+                ];
+                const offsetKeys = ["offset", "skip", "start", "from"];
+                const limitKeys = ["limit", "pageSize", "perPage", "count"];
+                let updated = false;
+                for (const key of pageKeys) {
+                    if (key in data) {
+                        data[key] = targetPage;
+                        updated = true;
+                        break;
+                    }
+                }
+                if (!updated) {
+                    let limitValue = null;
+                    for (const key of limitKeys) {
+                        if (key in data && typeof data[key] === "number" && data[key] > 0) {
+                            limitValue = data[key];
+                        }
+                    }
+                    for (const key of offsetKeys) {
+                        if (key in data) {
+                            const step = limitValue || 12;
+                            data[key] = (targetPage - 1) * step;
+                            updated = true;
+                            break;
+                        }
+                    }
+                }
+                if (!updated)
+                    return null;
+                return {
+                    url: lastRequest.url,
+                    method: "POST",
+                    postData: JSON.stringify(data),
+                    headers: { "content-type": "application/json" },
+                };
+            }
+            catch (_a) {
+                return null;
+            }
+        }
+        try {
+            const params = new URLSearchParams(raw);
+            const pageKeys = [
+                "page",
+                "pageNumber",
+                "pageNum",
+                "page_index",
+                "pageIndex",
+            ];
+            const offsetKeys = ["offset", "skip", "start", "from"];
+            const limitKeys = ["limit", "pageSize", "perPage", "count"];
+            for (const key of pageKeys) {
+                if (params.has(key)) {
+                    params.set(key, String(targetPage));
+                    return {
+                        url: lastRequest.url,
+                        method: "POST",
+                        postData: params.toString(),
+                        headers: { "content-type": "application/x-www-form-urlencoded" },
+                    };
+                }
+            }
+            let limitValue = null;
+            for (const key of limitKeys) {
+                if (params.has(key)) {
+                    const rawVal = Number(params.get(key));
+                    if (!Number.isNaN(rawVal) && rawVal > 0)
+                        limitValue = rawVal;
+                }
+            }
+            for (const key of offsetKeys) {
+                if (params.has(key)) {
+                    const step = limitValue || 12;
+                    params.set(key, String((targetPage - 1) * step));
+                    return {
+                        url: lastRequest.url,
+                        method: "POST",
+                        postData: params.toString(),
+                        headers: { "content-type": "application/x-www-form-urlencoded" },
+                    };
+                }
+            }
+        }
+        catch (_b) {
+            return null;
+        }
+    }
+    return null;
+};
+const fetchApiData = (page, request) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const response = yield page.evaluate((req) => __awaiter(void 0, void 0, void 0, function* () {
+            const options = {
+                method: req.method,
+                credentials: "include",
+            };
+            if (req.headers)
+                options.headers = req.headers;
+            if (req.postData)
+                options.body = req.postData;
+            const res = yield fetch(req.url, options);
+            const text = yield res.text();
+            return { status: res.status, text };
+        }), request);
+        if (!response || response.status < 200 || response.status >= 300) {
+            return null;
+        }
+        return JSON.parse(response.text);
+    }
+    catch (err) {
+        console.log("⚠️ Direct API fetch failed:", err.message);
+        return null;
+    }
+});
+const randomWait = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (minMs = 800, maxMs = 2200) {
+    const jitter = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    yield wait(jitter);
+});
 export const scrapClassicValuer = (method, page, make, model, transmission, url, jobId, job_progress_point, prev_job_progress_point) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const triggerSearch = () => __awaiter(void 0, void 0, void 0, function* () {
             if (method !== "make_model")
                 return;
+            yield randomWait();
             yield clickElement(page, '#input_comp-m30drsaf');
             yield wait(1500);
+            yield randomWait();
             yield typeLikeHuman(page, '#input_comp-m30drsaf', `${make} ${model} ${transmission}`.trim());
             yield wait(1500);
+            yield randomWait();
             yield page.keyboard.press("Enter");
             yield wait(5000);
         });
         // Navigate to Classic Valuer
         if (method === "make_model") {
+            yield randomWait();
             yield gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL || "");
             yield wait(5000);
             updateJob(jobId, {}, `Navigated to Classic Valuer homepage`);
         }
         else if (method === "url") {
+            yield randomWait();
             yield gotoPage(page, url);
             yield wait(5000);
             updateJob(jobId, {}, `Navigated to ${url}`);
@@ -130,6 +314,7 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
         let currentPage = 1;
         let firstApiReceived = false;
         let lastSeenPageEvent = 0;
+        let lastApiRequest = null;
         const firstApiEvent = new EventEmitter();
         const pageApiEvent = new EventEmitter();
         // --- Listen for API responses (BEFORE search) ---
@@ -139,13 +324,16 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 const resUrl = response.url();
                 if (!API_REGEX.test(resUrl))
                     return;
-                const headers = response.headers();
-                const contentType = headers["content-type"] || "";
-                if (!contentType.includes("application/json") &&
-                    !contentType.includes("text/plain"))
+                const req = response.request();
+                lastApiRequest = {
+                    url: resUrl,
+                    method: req.method(),
+                    postData: req.postData() || null,
+                };
+                if (response.status() < 200 || response.status() >= 300) {
+                    console.log(`⚠️ API response status ${response.status()} for ${resUrl}`);
                     return;
-                if (response.status() !== 200)
-                    return;
+                }
                 const data = yield safeParseJson(response);
                 if (!data)
                     return;
@@ -190,6 +378,7 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                     if (attempt === maxAttempts)
                         break;
                     console.log("🔄 Reloading page to retry API capture...");
+                    yield randomWait();
                     yield page.reload({ waitUntil: "networkidle2" });
                     yield wait(3000);
                     yield triggerSearch();
@@ -240,13 +429,9 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                         return true;
                     yield Promise.race([
                         waitForPageEvent(pageApiEvent, "page", PAGE_API_TIMEOUT, expectedPage),
-                        page.waitForResponse((res) => {
-                            var _a, _b;
-                            return API_REGEX.test(res.url()) &&
-                                res.status() === 200 &&
-                                ((((_a = res.headers()) === null || _a === void 0 ? void 0 : _a["content-type"]) || "").includes("application/json") ||
-                                    (((_b = res.headers()) === null || _b === void 0 ? void 0 : _b["content-type"]) || "").includes("text/plain"));
-                        }, { timeout: PAGE_API_TIMEOUT }),
+                        page.waitForResponse((res) => API_REGEX.test(res.url()) &&
+                            res.status() >= 200 &&
+                            res.status() < 300, { timeout: PAGE_API_TIMEOUT }),
                     ]);
                     return true;
                 }
@@ -267,6 +452,7 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 currentPage++;
                 console.log(`➡️ Going to page ${currentPage}...`);
                 // Click Next in the page context
+                yield randomWait();
                 yield nextBtn.click();
                 yield wait(4000);
                 const gotApi = yield waitForPageApi(currentPage, 3);
@@ -274,8 +460,26 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                     console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);
                     const retryBtn = yield waitForNextButton(2);
                     if (retryBtn) {
+                        yield randomWait();
                         yield retryBtn.click();
+                        yield wait(2000);
                         yield waitForPageApi(currentPage, 2);
+                    }
+                }
+                if (lastSeenPageEvent < currentPage && lastApiRequest) {
+                    const fallbackRequest = buildNextRequest(lastApiRequest, currentPage);
+                    if (fallbackRequest) {
+                        console.log(`⚠️ Using direct API fetch fallback for page ${currentPage}...`);
+                        const data = yield fetchApiData(page, fallbackRequest);
+                        if (data) {
+                            const parsedRecords = parseApiPayload(data, seenPayloadSignatures);
+                            if (parsedRecords.length) {
+                                results.push(...parsedRecords);
+                                lastSeenPageEvent = currentPage;
+                                pageApiEvent.emit("page", currentPage);
+                                console.log(`✅ Fallback captured ${parsedRecords.length} records for page ${currentPage}.`);
+                            }
+                        }
                     }
                 }
                 const progressDelta = Math.min(job_progress_point, statusPerPage * (currentPage - 1));
