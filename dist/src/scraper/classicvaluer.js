@@ -240,6 +240,7 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                 console.log(`➡️ Going to page ${currentPage}...`);
                 // Click Next in the page context
                 yield nextBtn.click();
+                yield wait(2000);
                 const gotApi = yield waitForPageApi(3);
                 if (!gotApi) {
                     console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);

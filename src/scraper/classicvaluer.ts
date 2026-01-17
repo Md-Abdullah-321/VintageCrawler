@@ -288,6 +288,7 @@ export const scrapClassicValuer = async (
 
         // Click Next in the page context
         await nextBtn.click();
+        await wait(2000);
 
         const gotApi = await waitForPageApi(3);
         if (!gotApi) {
