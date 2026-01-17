@@ -39,14 +39,14 @@ const deriveStatus = (priceStr: string | undefined) => {
   return normalized.includes("not sold") ? "Not Sold" : "Sold";
 };
 
-    const waitForEvent = (emitter: EventEmitter, event: string, timeout: number) =>
-      new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error("Timeout")), timeout);
-        emitter.once(event, () => {
-          clearTimeout(timer);
-          resolve();
-        });
-      });
+const waitForEvent = (emitter: EventEmitter, event: string, timeout: number) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Timeout")), timeout);
+    emitter.once(event, () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
 
 const parseApiPayload = (
   data: any,
@@ -87,18 +87,18 @@ const safeParseJson = async (response: any) => {
   }
 };
 
-    const waitForContainer = async (page: any) => {
-      try {
-        const container = await page.waitForSelector(CONTAINER_SELECTOR, {
-          timeout: 20000,
-        });
-        await container.scrollIntoViewIfNeeded();
-        return true;
-      } catch {
-        console.log(`⚠️ Container ${CONTAINER_SELECTOR} not found.`);
-        return false;
-      }
-    };
+const waitForContainer = async (page: any) => {
+  try {
+    const container = await page.waitForSelector(CONTAINER_SELECTOR, {
+      timeout: 20000,
+    });
+    await container.scrollIntoViewIfNeeded();
+    return true;
+  } catch {
+    console.log(`⚠️ Container ${CONTAINER_SELECTOR} not found.`);
+    return false;
+  }
+};
 
 export const scrapClassicValuer = async (
   method: string,
@@ -243,6 +243,7 @@ export const scrapClassicValuer = async (
             await new Promise((resolve) => setTimeout(resolve, 1500));
           }
 
+          await wait(1500);
           const nextBtn = await page.waitForSelector(NEXT_BUTTON_SELECTOR, {
             visible: true,
             timeout: NEXT_BUTTON_TIMEOUT,

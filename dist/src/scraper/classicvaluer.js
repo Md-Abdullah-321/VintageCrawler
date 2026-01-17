@@ -199,6 +199,7 @@ export const scrapClassicValuer = (method, page, make, model, transmission, url,
                         yield container.scrollIntoViewIfNeeded();
                         yield new Promise((resolve) => setTimeout(resolve, 1500));
                     }
+                    yield wait(1500);
                     const nextBtn = yield page.waitForSelector(NEXT_BUTTON_SELECTOR, {
                         visible: true,
                         timeout: NEXT_BUTTON_TIMEOUT,
