@@ -411,6 +411,14 @@ export const scrapClassicValuer = async (
         const resUrl = response.url();
         if (!API_REGEX.test(resUrl)) return;
 
+        const headers = response.headers();
+        const contentType = headers["content-type"] || "";
+        if (
+          !contentType.includes("application/json") &&
+          !contentType.includes("text/plain")
+        )
+          return;
+
         const req = response.request();
         lastApiRequest = {
           url: resUrl,
@@ -418,22 +426,32 @@ export const scrapClassicValuer = async (
           postData: req.postData() || null,
         };
 
-        if (response.status() < 200 || response.status() >= 300) {
-          console.log(
-            `⚠️ API response status ${response.status()} for ${resUrl}`
-          );
-          return;
-        }
+        if (response.status() !== 200) return;
 
-        const data = await safeParseJson(response);
-        if (!data) return;
+        const data = await response.json();
+        let records: any[] = [];
+
         if (typeof data === "object" && !Array.isArray(data)) {
           const count = data?.result?.count;
           if (count) maxPages = Math.ceil(count / 12);
+          records = data?.result?.records || data?.items || [];
+        } else if (Array.isArray(data)) {
+          records = data;
         }
 
-        const parsedRecords = parseApiPayload(data, seenPayloadSignatures);
-        results.push(...parsedRecords);
+        const sig = JSON.stringify(records).slice(0, 500);
+        if (!seenPayloadSignatures.has(sig)) {
+          seenPayloadSignatures.add(sig);
+          for (const rec of records) {
+            if (typeof rec === "object") {
+              results.push({
+                ...rec,
+                sourceUrl: process.env.CLASSIC_VALUER_BASE_URL,
+                status: deriveStatus(rec.price_usd_string),
+              });
+            }
+          }
+        }
 
         // Signal events
         firstApiReceived = true;
@@ -441,7 +459,7 @@ export const scrapClassicValuer = async (
         lastSeenPageEvent = currentPage;
         pageApiEvent.emit("page", currentPage);
 
-        console.log(`✅ Captured ${parsedRecords.length} records from API.`);
+        console.log(`✅ Captured ${records.length} records from API.`);
       } catch (err) {
         console.error("Error parsing API response:", err);
       }
