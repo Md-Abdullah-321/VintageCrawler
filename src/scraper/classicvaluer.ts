@@ -1,349 +1,151 @@
 /**
  * Title: classicvaluer.ts
- * Description: Scrap data from theclassicvaluer.com
+ * Description: Scrape data from theclassicvaluer.com
  * Author: Md Abdullah
  * Date: 28/08/2025
  */
 
+import dotenv from "dotenv";
 import { EventEmitter } from "events";
 import {
   clickElement,
   gotoPage,
   typeLikeHuman
 } from "../helpers/navigation.js";
-
-// Dependencies
-import dotenv from "dotenv";
-import re from "re2";
 import { wait } from "../helpers/utils.js";
 import { updateJob } from "../Services/scrap.service.js";
+
 dotenv.config();
 
+/* ------------------------------------------------------------------ */
+/* Types */
+/* ------------------------------------------------------------------ */
+
 type ClassicValuerRecord = Record<string, any> & {
-  sourceUrl?: string;
-  status?: string;
+  price_usd_string?: string;
+  year?: number;
+  mileage?: number;
+  sourceUrl: string;
+  status: "Sold" | "Not Sold";
 };
 
 type ApiRequestSnapshot = {
   url: string;
   method: string;
-  postData?: string | null;
+  postData: string;
+  headers: Record<string, string>;
 };
 
-const API_REGEX = new re(
-  "GetApiByV2ByAuctionResultsByCollectionByCollectionString\\.ajax",
-  "i"
-);
-const NEXT_BUTTON_SELECTOR = 'a[data-testid="Pagination_NavButton_Next"]';
-const CONTAINER_SELECTOR = "#comp-le47op7r";
-const NEXT_BUTTON_TIMEOUT = Number(
-  process.env.CLASSIC_VALUER_NEXT_TIMEOUT || 60000
-);
-const PAGE_API_TIMEOUT = Number(
-  process.env.CLASSIC_VALUER_PAGE_API_TIMEOUT || 180000
-);
-const FIRST_API_TIMEOUT = Number(
-  process.env.CLASSIC_VALUER_FIRST_API_TIMEOUT || 90000
-);
+/* ------------------------------------------------------------------ */
+/* Constants */
+/* ------------------------------------------------------------------ */
 
-const deriveStatus = (priceStr: string | undefined) => {
-  const normalized = (priceStr || "").toLowerCase();
-  if (!normalized.trim()) return "Not Sold";
+const API_REGEX = /AuctionResults/i;
+const CONTAINER_SELECTOR = "#comp-le47op7r";
+const FIRST_API_TIMEOUT = Number(
+  process.env.CLASSIC_VALUER_FIRST_API_TIMEOUT || 20000
+);
+const MAX_API_RETRIES = 5;
+
+/* ------------------------------------------------------------------ */
+/* Helpers */
+/* ------------------------------------------------------------------ */
+
+const deriveStatus = (priceStr?: string): "Sold" | "Not Sold" => {
+  const normalized = (priceStr || "").toLowerCase().trim();
+  if (!normalized) return "Not Sold";
   return normalized.includes("not sold") ? "Not Sold" : "Sold";
 };
 
-const waitForEvent = (emitter: EventEmitter, event: string, timeout: number) =>
+const waitForEvent = (
+  emitter: EventEmitter,
+  event: string,
+  timeout: number
+) =>
   new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Timeout")), timeout);
+    const timer = setTimeout(
+      () => reject(new Error("Timeout waiting for API")),
+      timeout
+    );
     emitter.once(event, () => {
       clearTimeout(timer);
       resolve();
     });
   });
 
-const waitForPageEvent = (
-  emitter: EventEmitter,
-  event: string,
-  timeout: number,
-  expectedPage: number
-) =>
-  new Promise<void>((resolve, reject) => {
-    const handler = (pageNum: number) => {
-      if (pageNum >= expectedPage) {
-        clearTimeout(timer);
-        emitter.removeListener(event, handler);
-        resolve();
-      }
-    };
-
-    const timer = setTimeout(() => {
-      emitter.removeListener(event, handler);
-      reject(new Error("Timeout"));
-    }, timeout);
-
-    emitter.on(event, handler);
-  });
-
-const parseApiPayload = (
-  data: any,
-  seenPayloadSignatures: Set<string>
-): ClassicValuerRecord[] => {
-  let records: any[] = [];
-
-  if (typeof data === "object" && !Array.isArray(data)) {
-    const count = data?.result?.count;
-    if (count) {
-      // track via outer scope where needed
-    }
-    records = data?.result?.records || data?.items || [];
-  } else if (Array.isArray(data)) {
-    records = data;
-  }
-
-  const sig = JSON.stringify(records).slice(0, 500);
-  if (seenPayloadSignatures.has(sig)) return [];
-  seenPayloadSignatures.add(sig);
-
-  return records
-    .filter((rec) => typeof rec === "object")
-    .map((rec) => ({
-      ...rec,
-      sourceUrl: process.env.CLASSIC_VALUER_BASE_URL,
-      status: deriveStatus(rec.price_usd_string),
-    }));
-};
-
-const safeParseJson = async (response: any) => {
-  try {
-    const text = await response.text();
-    return JSON.parse(text);
-  } catch (err) {
-    console.error("Error parsing response JSON:", err);
-    return null;
-  }
-};
-
 const waitForContainer = async (page: any) => {
   try {
-    const container = await page.waitForSelector(CONTAINER_SELECTOR, {
-      timeout: 20000,
+    const el = await page.waitForSelector(CONTAINER_SELECTOR, {
+      timeout: 20000
     });
-    await container.scrollIntoViewIfNeeded();
+    await el.scrollIntoViewIfNeeded();
     return true;
   } catch {
-    console.log(`⚠️ Container ${CONTAINER_SELECTOR} not found.`);
+    console.log("⚠️ Result container not found.");
     return false;
   }
 };
 
-const buildNextRequest = (
-  lastRequest: ApiRequestSnapshot | null,
-  targetPage: number
+const buildPaginatedRequest = (
+  lastRequest: ApiRequestSnapshot,
+  limit: number,
+  offset: number
 ) => {
-  if (!lastRequest) return null;
+  let payload: any;
 
-  const tryUpdateQuery = (urlStr: string) => {
-    try {
-      const url = new URL(urlStr);
-      const params = url.searchParams;
-      const pageKeys = [
-        "page",
-        "pageNumber",
-        "pageNum",
-        "page_index",
-        "pageIndex",
-        "p",
-      ];
-      const offsetKeys = ["offset", "skip", "start", "from"];
-      const limitKeys = ["limit", "pageSize", "perPage", "count"];
-
-      for (const key of pageKeys) {
-        if (params.has(key)) {
-          params.set(key, String(targetPage));
-          url.search = params.toString();
-          return { url: url.toString(), method: "GET" };
-        }
-      }
-
-      let limitValue: number | null = null;
-      for (const key of limitKeys) {
-        if (params.has(key)) {
-          const raw = Number(params.get(key));
-          if (!Number.isNaN(raw) && raw > 0) limitValue = raw;
-        }
-      }
-
-      for (const key of offsetKeys) {
-        if (params.has(key)) {
-          const step = limitValue || 12;
-          const offset = (targetPage - 1) * step;
-          params.set(key, String(offset));
-          url.search = params.toString();
-          return { url: url.toString(), method: "GET" };
-        }
-      }
-    } catch {
-      return null;
-    }
-
-    return null;
-  };
-
-  if (lastRequest.method === "GET") {
-    return tryUpdateQuery(lastRequest.url);
-  }
-
-  if (lastRequest.method === "POST" && lastRequest.postData) {
-    const raw = lastRequest.postData.trim();
-    if (raw.startsWith("{")) {
-      try {
-        const data = JSON.parse(raw);
-        const pageKeys = [
-          "page",
-          "pageNumber",
-          "pageNum",
-          "page_index",
-          "pageIndex",
-        ];
-        const offsetKeys = ["offset", "skip", "start", "from"];
-        const limitKeys = ["limit", "pageSize", "perPage", "count"];
-        let updated = false;
-
-        for (const key of pageKeys) {
-          if (key in data) {
-            data[key] = targetPage;
-            updated = true;
-            break;
-          }
-        }
-
-        if (!updated) {
-          let limitValue: number | null = null;
-          for (const key of limitKeys) {
-            if (key in data && typeof data[key] === "number" && data[key] > 0) {
-              limitValue = data[key];
-            }
-          }
-          for (const key of offsetKeys) {
-            if (key in data) {
-              const step = limitValue || 12;
-              data[key] = (targetPage - 1) * step;
-              updated = true;
-              break;
-            }
-          }
-        }
-
-        if (!updated) return null;
-        return {
-          url: lastRequest.url,
-          method: "POST",
-          postData: JSON.stringify(data),
-          headers: { "content-type": "application/json" },
-        };
-      } catch {
-        return null;
-      }
-    }
-
-    try {
-      const params = new URLSearchParams(raw);
-      const pageKeys = [
-        "page",
-        "pageNumber",
-        "pageNum",
-        "page_index",
-        "pageIndex",
-      ];
-      const offsetKeys = ["offset", "skip", "start", "from"];
-      const limitKeys = ["limit", "pageSize", "perPage", "count"];
-
-      for (const key of pageKeys) {
-        if (params.has(key)) {
-          params.set(key, String(targetPage));
-          return {
-            url: lastRequest.url,
-            method: "POST",
-            postData: params.toString(),
-            headers: { "content-type": "application/x-www-form-urlencoded" },
-          };
-        }
-      }
-
-      let limitValue: number | null = null;
-      for (const key of limitKeys) {
-        if (params.has(key)) {
-          const rawVal = Number(params.get(key));
-          if (!Number.isNaN(rawVal) && rawVal > 0) limitValue = rawVal;
-        }
-      }
-
-      for (const key of offsetKeys) {
-        if (params.has(key)) {
-          const step = limitValue || 12;
-          params.set(key, String((targetPage - 1) * step));
-          return {
-            url: lastRequest.url,
-            method: "POST",
-            postData: params.toString(),
-            headers: { "content-type": "application/x-www-form-urlencoded" },
-          };
-        }
-      }
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
-};
-
-const fetchApiData = async (
-  page: any,
-  request: {
-    url: string;
-    method: string;
-    postData?: string;
-    headers?: Record<string, string>;
-  }
-) => {
   try {
-    const response = await page.evaluate(async (req: any) => {
-      const options: any = {
-        method: req.method,
-        credentials: "include",
-      };
-      if (req.headers) options.headers = req.headers;
-      if (req.postData) options.body = req.postData;
-      const res = await fetch(req.url, options);
-      const text = await res.text();
-      return { status: res.status, text };
-    }, request);
-
-    if (!response || response.status < 200 || response.status >= 300) {
-      return null;
-    }
-    return JSON.parse(response.text);
-  } catch (err) {
-    console.log("⚠️ Direct API fetch failed:", (err as Error).message);
-    return null;
+    payload = JSON.parse(lastRequest.postData);
+  } catch {
+    throw new Error("Failed to parse API payload");
   }
+
+  if (!Array.isArray(payload)) {
+    throw new Error("Unexpected API payload format");
+  }
+
+  const paginationObj = payload.find(
+    (item: any) =>
+      typeof item === "object" &&
+      item !== null &&
+      "limit" in item &&
+      "offset" in item
+  );
+
+  if (!paginationObj) {
+    throw new Error("Pagination object not found in API payload");
+  }
+
+  paginationObj.limit = limit;
+  paginationObj.offset = offset;
+
+  return {
+    url: lastRequest.url,
+    method: lastRequest.method,
+    postData: JSON.stringify(payload),
+    headers: {
+      ...lastRequest.headers,
+      "content-type": "application/json"
+    }
+  };
 };
 
-const randomWait = async (minMs = 800, maxMs = 2200) => {
-  const envMin = Number(process.env.CLASSIC_VALUER_ACTION_WAIT_MIN_MS);
-  const envMax = Number(process.env.CLASSIC_VALUER_ACTION_WAIT_MAX_MS);
-  const finalMin = Number.isNaN(envMin) ? minMs : envMin;
-  const finalMax = Number.isNaN(envMax) ? maxMs : envMax;
-  const jitter =
-    Math.floor(Math.random() * (finalMax - finalMin + 1)) + finalMin;
-  await wait(jitter);
+const fetchApiData = async (page: any, req: any) => {
+  return await page.evaluate((r: any) => {
+    return fetch(r.url, {
+      method: r.method,
+      body: r.postData,
+      headers: r.headers,
+      credentials: "include"
+    }).then(res => {
+      if (!res.ok) return null;
+      return res.json();
+    }).catch(() => null);
+  }, req);
 };
 
-const waitAfterNextClick = async () => {
-  const delay = Number(process.env.CLASSIC_VALUER_WAIT_AFTER_NEXT_MS || 30000);
-  await wait(delay);
-};
+/* ------------------------------------------------------------------ */
+/* Main Scraper */
+/* ------------------------------------------------------------------ */
 
 export const scrapClassicValuer = async (
   method: string,
@@ -355,300 +157,181 @@ export const scrapClassicValuer = async (
   jobId: string,
   job_progress_point: number,
   prev_job_progress_point: number
-) => {
+): Promise<ClassicValuerRecord[]> => {
   try {
+    /* -------------------------------------------------------------- */
+    /* Navigation */
+    /* -------------------------------------------------------------- */
+
     const triggerSearch = async () => {
       if (method !== "make_model") return;
-      await randomWait();
-      await clickElement(page, '#input_comp-m30drsaf');
-      await wait(1500);
-
-      await randomWait();
+      await clickElement(page, "#input_comp-m30drsaf");
+      await wait(1200);
       await typeLikeHuman(
         page,
-        '#input_comp-m30drsaf',
+        "#input_comp-m30drsaf",
         `${make} ${model} ${transmission}`.trim()
       );
-
-      await wait(1500);
-      await randomWait();
+      await wait(800);
       await page.keyboard.press("Enter");
-      await wait(5000);
     };
 
-    // Navigate to Classic Valuer
     if (method === "make_model") {
-      await randomWait();
-      await gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL || "");
-      await wait(5000);
-      updateJob(jobId, {}, `Navigated to Classic Valuer homepage`);
-    } else if (method === "url") {
-      await randomWait();
+      await gotoPage(page, process.env.CLASSIC_VALUER_BASE_URL!);
+    } else {
       await gotoPage(page, url);
-      await wait(5000);
-      updateJob(jobId, {}, `Navigated to ${url}`);
     }
 
-    // --- Perform search by make/model ---
+    await wait(4000);
 
-    console.log("📄 Page loaded:", await page.title());
+    /* -------------------------------------------------------------- */
+    /* State */
+    /* -------------------------------------------------------------- */
 
-    // --- Scraping setup ---
     let results: ClassicValuerRecord[] = [];
-    let seenPayloadSignatures = new Set<string>();
-    let maxPages = 0;
-    let currentPage = 1;
-    let firstApiReceived = false;
-    let lastSeenPageEvent = 0;
     let lastApiRequest: ApiRequestSnapshot | null = null;
+    let totalCount = 0;
+    let apiCaptured = false;
 
-    const firstApiEvent = new EventEmitter();
-    const pageApiEvent = new EventEmitter();
+    const apiEvent = new EventEmitter();
 
-    // --- Listen for API responses (BEFORE search) ---
-    page.on("response", async (response: any) => {
+    /* -------------------------------------------------------------- */
+    /* API Listener (clean + deterministic) */
+    /* -------------------------------------------------------------- */
+
+    page.removeAllListeners("response");
+
+    const responseHandler = async (response: any) => {
+      const resUrl = response.url();
+      if (!API_REGEX.test(resUrl)) return;
+
       try {
-        const resUrl = response.url();
-        if (!API_REGEX.test(resUrl)) return;
+        const data = await response.json();
+        const records = data?.result?.records;
 
-        const headers = response.headers();
-        const contentType = headers["content-type"] || "";
-        if (
-          !contentType.includes("application/json") &&
-          !contentType.includes("text/plain")
-        )
-          return;
+        if (!Array.isArray(records) || records.length === 0) return;
 
         const req = response.request();
+        const postData = req.postData();
+
+        if (!postData) return;
+
         lastApiRequest = {
           url: resUrl,
           method: req.method(),
-          postData: req.postData() || null,
+          postData,
+          headers: req.headers()
         };
 
-        if (response.status() !== 200) return;
+        totalCount = data?.result?.count ?? records.length;
 
-        const data = await response.json();
-        let records: any[] = [];
+        results = records.map((r: any) => ({
+          ...r,
+          sourceUrl: process.env.CLASSIC_VALUER_BASE_URL!,
+          status: deriveStatus(r.price_usd_string)
+        }));
 
-        if (typeof data === "object" && !Array.isArray(data)) {
-          const count = data?.result?.count;
-          if (count) maxPages = Math.ceil(count / 12);
-          records = data?.result?.records || data?.items || [];
-        } else if (Array.isArray(data)) {
-          records = data;
-        }
+        apiCaptured = true;
+        apiEvent.emit("hit");
 
-        const sig = JSON.stringify(records).slice(0, 500);
-        if (!seenPayloadSignatures.has(sig)) {
-          seenPayloadSignatures.add(sig);
-          for (const rec of records) {
-            if (typeof rec === "object") {
-              results.push({
-                ...rec,
-                sourceUrl: process.env.CLASSIC_VALUER_BASE_URL,
-                status: deriveStatus(rec.price_usd_string),
-              });
-            }
-          }
-        }
-
-        // Signal events
-        firstApiReceived = true;
-        firstApiEvent.emit("first"); // only first matters once
-        lastSeenPageEvent = currentPage;
-        pageApiEvent.emit("page", currentPage);
-
-        console.log(`✅ Captured ${records.length} records from API.`);
-      } catch (err) {
-        console.error("Error parsing API response:", err);
-      }
-    });
-
-    // --- Perform search by make/model ---
-    await triggerSearch();
-
-
-    // --- Wait for container ---
-    const hasContainer = await waitForContainer(page);
-    if (!hasContainer) return [];
-
-    // --- Wait for first API response (retry with reload/search if missing) ---
-    const ensureFirstApi = async () => {
-      const maxAttempts = 5;
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-          if (firstApiReceived) return;
-          await Promise.race([
-            waitForEvent(firstApiEvent, "first", FIRST_API_TIMEOUT),
-          ]);
-          return;
-        } catch {
-          console.log(`⚠️ First API response attempt ${attempt} timed out.`);
-          if (attempt === maxAttempts) break;
-          console.log("🔄 Reloading page to retry API capture...");
-          await randomWait();
-          await page.reload({ waitUntil: "networkidle2" });
-          await wait(3000);
-          await triggerSearch();
-          const containerReady = await waitForContainer(page);
-          if (!containerReady) {
-            console.log("⚠️ Container missing after reload; skipping further retries.");
-            break;
-          }
-        }
+        console.log(
+          `✅ API captured (${records.length} / ${totalCount})`
+        );
+      } catch {
+        /* ignore non-JSON / noise responses */
       }
     };
 
-    await ensureFirstApi();
+    page.on("response", responseHandler);
 
-    console.log(`📄 Maximum pages to scrape: ${maxPages || "unknown"}`);
+    /* -------------------------------------------------------------- */
+    /* Capture Phase */
+    /* -------------------------------------------------------------- */
 
-    const pagesToScrape = Math.max(1, maxPages || 1);
-    const statusPerPage = pagesToScrape
-      ? Math.floor(job_progress_point / pagesToScrape)
-      : 0;
+    let attempt = 0;
+    while (attempt < MAX_API_RETRIES && !apiCaptured) {
+      attempt++;
+      console.log(`🔄 API attempt ${attempt}/${MAX_API_RETRIES}`);
 
-    // --- Pagination loop ---
-    const waitForNextButton = async (attempts = 3) => {
-      for (let attempt = 1; attempt <= attempts; attempt++) {
-        try {
-          const container = await page.$(CONTAINER_SELECTOR);
-          if (container) {
-            await container.scrollIntoViewIfNeeded();
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-          }
+      await triggerSearch();
 
-          await wait(1500);
-          const nextBtn = await page.waitForSelector(NEXT_BUTTON_SELECTOR, {
-            visible: true,
-            timeout: NEXT_BUTTON_TIMEOUT,
-          });
-
-          const isDisabled = await nextBtn.evaluate(
-            (btn: any) => btn.getAttribute("aria-disabled") === "true"
-          );
-          if (isDisabled) return null;
-          return nextBtn;
-        } catch (err: any) {
-          console.log(`⚠️ Next button attempt ${attempt} failed: ${err.message}`);
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-        }
+      const containerReady = await waitForContainer(page);
+      if (!containerReady) {
+        console.log("⚠️ Container not ready, reloading...");
+        await page.reload({ waitUntil: "networkidle2" });
+        await wait(3000);
+        attempt--; // retry this attempt
+        continue;
       }
-      return null;
-    };
 
-    const waitForPageApi = async (expectedPage: number, attempts = 2) => {
-      for (let attempt = 1; attempt <= attempts; attempt++) {
-        try {
-          if (lastSeenPageEvent >= expectedPage) return true;
-          await Promise.race([
-            waitForPageEvent(pageApiEvent, "page", PAGE_API_TIMEOUT, expectedPage),
-            page.waitForResponse(
-              (res: any) =>
-                API_REGEX.test(res.url()) &&
-                res.status() >= 200 &&
-                res.status() < 300,
-              { timeout: PAGE_API_TIMEOUT }
-            ),
-          ]);
-          return true;
-        } catch {
-          console.log(`⚠️ Page API response attempt ${attempt} timed out.`);
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-        }
-      }
-      return false;
-    };
-
-    while (currentPage < pagesToScrape) {
       try {
-        const nextBtn = await waitForNextButton(4);
-        if (!nextBtn) {
-          console.log(`✅ Next button disabled after page ${currentPage}.`);
+        await waitForEvent(apiEvent, "hit", FIRST_API_TIMEOUT);
+      } catch {
+        console.log("⚠️ API not detected, reloading...");
+        await page.reload({ waitUntil: "networkidle2" });
+        await wait(3000);
+      }
+    }
+
+    page.off("response", responseHandler);
+
+    if (!apiCaptured || !lastApiRequest) {
+      console.log("❌ Failed to capture valid API request.");
+      return [];
+    }
+
+    /* -------------------------------------------------------------- */
+    /* Fetch All Records with Pagination if Necessary */
+    /* -------------------------------------------------------------- */
+
+    console.log("➡️ Fetching all records...");
+    results = []; // Reset results to collect all
+
+    let offset = 0;
+    let maxLimit = 100; // Assumed max limit based on observation; can adjust if needed
+
+    while (offset < totalCount) {
+      const limit = Math.min(maxLimit, totalCount - offset);
+      console.log(`Fetching batch: offset=${offset}, limit=${limit}`);
+
+      const pagReq = buildPaginatedRequest(lastApiRequest, limit, offset);
+      const pagData = await fetchApiData(page, pagReq);
+
+      if (pagData && Array.isArray(pagData?.result?.records)) {
+        const batch = pagData.result.records.map((r: any) => ({
+          ...r,
+          sourceUrl: process.env.CLASSIC_VALUER_BASE_URL!,
+          status: deriveStatus(r.price_usd_string)
+        }));
+        results.push(...batch);
+
+        if (batch.length < limit) {
+          console.log(`⚠️ Received fewer records than requested (${batch.length}/${limit}). Stopping.`);
           break;
         }
-
-        currentPage++;
-        console.log(`➡️ Going to page ${currentPage}...`);
-
-        // Click Next in the page context
-        await randomWait();
-        await nextBtn.click();
-        await waitAfterNextClick();
-
-        const gotApi = await waitForPageApi(currentPage, 3);
-        if (!gotApi) {
-          console.log(`⚠️ No API response after navigating to page ${currentPage}. Retrying click...`);
-          const retryBtn = await waitForNextButton(2);
-          if (retryBtn) {
-            await randomWait();
-            await retryBtn.click();
-            await wait(2000);
-            await waitForPageApi(currentPage, 2);
-          }
-        }
-
-        if (lastSeenPageEvent < currentPage && lastApiRequest) {
-          const fallbackRequest = buildNextRequest(lastApiRequest, currentPage);
-          if (fallbackRequest) {
-            console.log(
-              `⚠️ Using direct API fetch fallback for page ${currentPage}...`
-            );
-            const data = await fetchApiData(page, fallbackRequest);
-            if (data) {
-              const parsedRecords = parseApiPayload(
-                data,
-                seenPayloadSignatures
-              );
-              if (parsedRecords.length) {
-                results.push(...parsedRecords);
-                lastSeenPageEvent = currentPage;
-                pageApiEvent.emit("page", currentPage);
-                console.log(
-                  `✅ Fallback captured ${parsedRecords.length} records for page ${currentPage}.`
-                );
-              }
-            }
-          }
-        }
-
-        const progressDelta = Math.min(
-          job_progress_point,
-          statusPerPage * (currentPage - 1)
-        );
-        updateJob(
-          jobId,
-          { progress: prev_job_progress_point + progressDelta },
-          `Scraping page ${currentPage} of ${maxPages}`
-        );
-      } catch (err: any) {
-        console.log(`⚠️ Pagination stopped at page ${currentPage}:`, err.message);
-        updateJob(
-          jobId,
-          {},
-          `Pagination stopped at page ${currentPage}: ${err.message}`
-        );
+      } else {
+        console.log(`⚠️ Failed to fetch batch at offset ${offset}.`);
         break;
       }
+
+      offset += limit;
     }
 
-    // --- Wait for last API response (so last page is captured) ---
-    if (lastSeenPageEvent < currentPage) {
-      try {
-        await Promise.race([waitForEvent(pageApiEvent, "page", 60000)]);
-      } catch {
-        console.log("⚠️ Last API response did not arrive in time.");
-      }
-    }
+    /* -------------------------------------------------------------- */
+    /* Job Update */
+    /* -------------------------------------------------------------- */
 
-    // Capture title before closing the page to avoid detached frame errors
-    const pageTitle = await page.title();
+    await updateJob(
+      jobId,
+      { progress: prev_job_progress_point + job_progress_point },
+      "Classic Valuer scraping completed"
+    );
 
-    console.log(`✅ Scraping completed for ${pageTitle}. Total records: ${results.length}`);
+    console.log(`✅ Total records scraped: ${results.length}`);
     return results;
-  } catch (error) {
-    console.error("❌ Error scraping Classic Valuer:", error);
+
+  } catch (err) {
+    console.error("❌ Error scraping Classic Valuer:", err);
     return [];
   }
 };
